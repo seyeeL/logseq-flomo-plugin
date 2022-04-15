@@ -1,7 +1,15 @@
+<template>
+  <a-modal v-model:visible="visible" title="" :footer="null">
+    <div>
+      这是设置弹窗
+    </div>
+  </a-modal>
+</template>
+
 <script setup>
 import { ref } from "vue";
 
-const color = ref("red");
+const visible = true;
 
 function onClickBackdrop() {
   logseq.hideMainUI();
@@ -9,23 +17,6 @@ function onClickBackdrop() {
 
 </script>
 
-<template>
-  <main
-    @click="onClickBackdrop()"
-    class="
-      backdrop-filter backdrop-blur-md
-      fixed
-      inset-0
-      flex
-      items-center
-      justify-center
-    "
-  >
-    <button @click="color = color === 'red' ? 'green' : 'red'">
-      Color is: {{ color }}
-    </button>
-  </main>
-</template>
 
 <style scoped>
 button {

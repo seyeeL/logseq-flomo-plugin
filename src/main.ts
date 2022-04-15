@@ -1,12 +1,16 @@
 import "@logseq/libs";
+import Antd from 'ant-design-vue';
 import "virtual:windi-base.css";
 import "virtual:windi-components.css";
 
 import "virtual:windi-utilities.css";
 import "virtual:windi-devtools";
+import 'ant-design-vue/dist/antd.css';
 
 import { createApp } from 'vue'
-
+const app = createApp(App);
+const isDevelopment = import.meta.env.DEV
+app.use(Antd).mount('#app');
 import App from './App.vue';
 
 import { logseq as PL } from "../package.json";
@@ -70,3 +74,6 @@ if (top[magicKey]) {
 }
 
 logseq.ready(main).catch(console.error);
+if (isDevelopment) {
+  app.mount('#root')
+}
