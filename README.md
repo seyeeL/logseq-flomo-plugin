@@ -1,16 +1,10 @@
-# Logseq Plugin Template Vue
+# Logseq Flomo Plugin
 
-## Features
+Enter your Flomo cookie and token. Fetch Updates will fetch new memos
 
-- plug & play boilerplate
-- develop with HMR, empowered by lightning fast Vite ⚡
-- windicss for styling
-- pnpm
+Selecting a rule and clicking fetching will gather memos and create a page.
 
-### How HMR works?
 
-See vite.config.ts. There is a custom plugin that will write a dev only index.html.
-The index.html will
-
-- change its base to `http://${config.server.host}:${config.server.port}`
-- attach `/@vite/client` (allows error overlay and connect HMR ws)
+## Running the Plugin
+npm install && npm run build in terminal to install dependencies.
+Load unpacked plugin in Logseq Desktop client.
