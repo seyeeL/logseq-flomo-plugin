@@ -5,9 +5,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preinstall": "npx only-allow pnpm"
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "postversion": "git push && git push --tags"
   },
   "license": "MIT",
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
     "@logseq/libs": "^0.0.1-alpha.26",
@@ -15,8 +21,12 @@
     "vue": "^3.2.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
     "@vitejs/plugin-vue": "^1.6.0",
     "@vue/compiler-sfc": "^3.2.6",
+    "conventional-changelog-cli": "^2.1.1",
+    "husky": "^4.3.8",
     "typescript": "4.4.2",
     "vite": "2.5.1",
     "vite-plugin-windicss": "1.3.0",
