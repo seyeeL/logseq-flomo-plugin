@@ -67,5 +67,11 @@ export default defineConfig({
     },
     port: 4568,
     strictPort: true,
+    proxy: {
+      '/flomo': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    }
   },
 });
