@@ -2,9 +2,17 @@
   <a-modal v-model:visible="visible" :footer="null" :closable="false" width="700">
     <template #title>
       <span>Settings</span>
-      <sync-outlined class="sync-icon" @click="onSync"/>
     </template>
-    <a-table :dataSource="dataSource" :columns="columns" bordered :row-key="record => record.slug">
+    <div class="sync-block">
+      <a-button class="sync-button" type="primary" :loading="percent > 0 && percent !== 100" @click="onSync">
+        <template #icon><SyncOutlined /></template>
+        Sync
+      </a-button>
+    </div>
+    <div class="sync-block" v-if="percent > 0 && percent !== 100">
+      <a-progress stroke-linecap="square" :percent="percent" type="circle" />
+    </div>
+    <a-table v-if="percent === 100" :dataSource="dataSource" :columns="columns" bordered :row-key="record => record.slug">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.dataIndex === 'slug'">
           <span>
@@ -42,6 +50,7 @@ export default {
     return {
       visible: true,
       gear: false,
+      percent: 0,
       columns: [
         {
           title: 'slug',
@@ -110,23 +119,29 @@ export default {
       const { data } = await axios.get(`/flomo/api/user/${userId}/stat/?tz=8:0`, {
         headers: { cookie, x_xsrf_token },
       });
-      const { memo_count } = data?.stat || { memo_count : 0 };
-      console.log('memo_count', memo_count)
+      // const { memo_count } = data?.stat || { memo_count : 0 };
+      const memo_count = 5000;
       const offset = 50;
-      const res = await Promise.all(
-        Array
-          .from({length: Math.ceil((maxCount || memo_count) / offset)})
-          .map((t, i) => axios.get(`/flomo/api/memo/?offset=${offset*(i+1)}&tz=8:0`, {
-            headers: { cookie, x_xsrf_token },
-          }))
-      )
+      const queryCount = memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
+      // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
+      const queryTimes = Math.ceil(queryCount / offset) + 1;
       const rows = [];
-      res.forEach(item => {
-        const { memos } = item?.data || { memo: [] };
-        memos.forEach(memo => rows.push({...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`}));
-      })
+      for (let i = 0; i < queryTimes; i++) {
+        const { data } = await axios.get(`/flomo/api/memo/?offset=${i*offset}&tz=8:0`, {
+          headers: {
+            // cookie,
+            x_xsrf_token
+          },
+        });
+        this.percent = Math.floor(100 / queryTimes) * i;
+        console.log('percent', this.percent)
+        if (data?.memos?.length > 0) {
+          data.memos.forEach(memo => rows.push({...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`}));
+        }
+      }
       console.log('rows', rows);
       this.dataSource = rows;
+      this.percent = 100;
     }
   },
 }
@@ -136,9 +151,11 @@ export default {
 button {
   color: v-bind(color);
 }
-.sync-icon{
-  float: right;
-  cursor: pointer;
-  margin-top:6px;
+.sync-block {
+  padding: 20px 0;
+  text-align: center;
+}
+.sync-button {
+  color: #FFF;
 }
 </style>
