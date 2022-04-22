@@ -129,17 +129,16 @@ export default {
       for (let i = 0; i < queryTimes; i++) {
         const { data } = await axios.get(`/flomo/api/memo/?offset=${i*offset}&tz=8:0`, {
           headers: {
-            // cookie,
+            // cookie,  // 暂时开发环境先注释cookie
             x_xsrf_token
           },
         });
         this.percent = Math.floor(100 / queryTimes) * i;
-        console.log('percent', this.percent)
         if (data?.memos?.length > 0) {
           data.memos.forEach(memo => rows.push({...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`}));
         }
       }
-      console.log('rows', rows);
+      console.log('flomo fetch success:', rows);
       this.dataSource = rows;
       this.percent = 100;
     }
