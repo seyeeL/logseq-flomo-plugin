@@ -13,3 +13,6 @@
 # misc
 .DS_Store
 .idea/
+
+# temp
+temp/

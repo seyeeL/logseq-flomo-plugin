@@ -1,6 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const {createProxyMiddleware} = require('http-proxy-middleware');
 
 const app = express();
 
@@ -11,33 +11,26 @@ const API_SERVICE_URL = 'https://flomoapp.com';
 // Logging
 app.use(morgan('dev'));
 
-app.use(
-    '/flomo',
-    createProxyMiddleware({
-        target: API_SERVICE_URL,
-        changeOrigin: true,
-        onProxyReq,
-        pathRewrite: {
-            [`^/flomo`]: '',
-        },
-    })
-);
+app.use('/flomo', createProxyMiddleware({
+  target: API_SERVICE_URL, changeOrigin: true, onProxyReq, pathRewrite: {
+    [`^/flomo`]: '',
+  },
+}));
 
 function onProxyReq(proxyReq, req, res) {
-    const cookie = `
-    填入自己的cookie
-    `;
-    // add custom header to request
-    proxyReq.setHeader('accept', 'application/json, text/plain, */*');
-    proxyReq.setHeader('accept-encoding', 'gzip, deflate, br');
-    proxyReq.setHeader('user-agent', 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43');
-    proxyReq.setHeader('accept', 'XMLHttpRequest');
-    proxyReq.setHeader('referer', 'https://flomoapp.com/mine?tag=inbox');
-    proxyReq.setHeader('x-requested-with', 'foobar');
-    proxyReq.setHeader('cookie', cookie);
+  // add custom header to request
+  proxyReq.setHeader('accept', 'application/json, text/plain, */*');
+  proxyReq.setHeader('accept-encoding', 'gzip, deflate, br');
+  proxyReq.setHeader('user-agent', 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43');
+  proxyReq.setHeader('accept', 'XMLHttpRequest');
+  proxyReq.setHeader('referer', 'https://flomoapp.com/mine?tag=inbox');
+  proxyReq.setHeader('x-requested-with', 'foobar');
+
+  const { cookie } = require('../temp/setting.json');
+  proxyReq.setHeader('cookie', cookie);
 }
 
 // Start the Proxy
 app.listen(PORT, HOST, () => {
-    console.log(`Starting Proxy at ${HOST}:${PORT}`);
+  console.log(`Starting Proxy at ${HOST}:${PORT}`);
 });

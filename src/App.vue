@@ -1,71 +1,136 @@
 <template>
-  <a-modal v-model:visible="visible" :footer="null" :closable="false">
+  <a-modal v-model:visible="visible" :footer="null" :closable="false" width="700">
     <template #title>
       <span>Settings</span>
       <sync-outlined class="sync-icon" @click="onSync"/>
     </template>
-    <a-form :model="formState" name="basic" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }" autocomplete="off"
-      @finish="onFinish" @finishFailed="onFinishFailed">
-      <a-form-item label="cookie" name="cookie"
-        :rules="[{ required: true, message: 'Please input your cookie!' }]">
-        <a-input v-model:value="formState.cookie" />
-      </a-form-item>
-      <a-form-item label="x-xsrf-token" name="x_xsrf_token"
-        :rules="[{ required: true, message: 'Please input your x-xsrf-token!' }]">
-        <a-input v-model:value="formState.x_xsrf_token" />
-      </a-form-item>
-    </a-form>
+    <a-table :dataSource="dataSource" :columns="columns" bordered :row-key="record => record.slug">
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.dataIndex === 'slug'">
+          <span>
+            {{ record.slug }}
+          </span>
+        </template>
+        <template v-else-if="column.dataIndex === 'tags'">
+          <span>
+            <a-tag
+              v-for="tag in record.tags"
+              :key="tag"
+            >
+              {{ tag }}
+            </a-tag>
+          </span>
+        </template>
+        <template v-else-if="column.dataIndex === 'memo_url'">
+          <a @click="onDetailClick(record.memo_url)">{{record.memo_url}}</a>
+        </template>
+      </template>
+    </a-table>
   </a-modal>
 </template>
 
-<script setup>
-import { SyncOutlined } from "@ant-design/icons-vue";
+<script>
 import axios from 'axios';
+import { SyncOutlined } from "@ant-design/icons-vue";
 
-const max_count = 5;   // 限制memo的最大数量
-const isLimit = true;  // 是否使用限制数量
-const visible = true;
-const formState = {
-  cookie: `
-  填入自己的cookie，注意这里填写的暂不起效，也就是不填也没事
-  `,
-  x_xsrf_token:  `
-  填入自己的token
-  `,
-  remember: true,
-};
+export default {
+  name: 'App',
+  components: {
+    SyncOutlined
+  },
+  data () {
+    return {
+      visible: true,
+      gear: false,
+      columns: [
+        {
+          title: 'slug',
+          dataIndex: 'slug',
+        },
+        {
+          title: 'content',
+          dataIndex: 'content',
+          ellipsis: true,
+        },
+        {
+          title: 'tags',
+          dataIndex: 'tags',
+          key: 'tags',
+        },
+        {
+          title: 'created_at',
+          dataIndex: 'created_at',
+        },
+        {
+          title: 'updated_at',
+          dataIndex: 'updated_at',
+        },
+        {
+          title: 'memo_url',
+          dataIndex: 'memo_url',
+        },
+      ],
+      dataSource: [],
+      maxCount: 0,
+      cookie: '',
+      x_xsrf_token:  '',
+      userId:  '',
+    }
+  },
+  async mounted () {
+    import('../temp/setting.json').then(s => {
+      // TODO: prod 取插件设置
+      // const appUserConfig = await logseq.App.getUserConfigs();
+      // const s = logseq.settings;
+      this.maxCount = s.maxCount;
+      this.cookie = s.cookie;
+      this.x_xsrf_token = s.x_xsrf_token;
+      this.userId = s.userId;
+    })
 
-function onClickBackdrop() {
-  logseq.hideMainUI();
-}
-function onFinish() {}
-function onFinishFailed() {}
-async function fetchMemos() {
-  const { cookie, x_xsrf_token } = formState;
-  const { data } = await axios.get('/flomo/api/user/12120/stat/?tz=8:0', {
-    headers: { cookie, x_xsrf_token },
-  });
-  const { memo_count } = data?.stat || { memo_count : 0 };
-  console.log('memo_count', memo_count)
-  const res = await Promise.all(
-    Array
-      .from({length: isLimit ? max_count : memo_count})
-      .map((t, i) => axios.get(`/flomo/api/memo/?offset=${50*(i+1)}&tz=8:0`, {
+    // logseq.on('ui:visible:changed', async ({ visible }) => {
+    //   if (visible) {
+    //     this.visible = visible;
+    //   }
+    // })
+  },
+  methods: {
+    hideMainUI() {
+      this.gear = false;
+      logseq.hideMainUI()
+    },
+    onDetailClick(url) {
+      window.open(url,'_blank')
+    },
+    onSync() {
+      this.fetchMemos()
+    },
+    async fetchMemos() {
+      const { cookie, x_xsrf_token, maxCount, userId } = this;
+      const { data } = await axios.get(`/flomo/api/user/${userId}/stat/?tz=8:0`, {
         headers: { cookie, x_xsrf_token },
-      }))
-  )
-  const rows = [];
-  res.forEach(item => {
-    const { memos } = item?.data || { memo: [] };
-    memos.forEach(memo => rows.push(memo));
-  })
-  console.log('rows', rows);
-}
-function onSync() {
-  fetchMemos();
+      });
+      const { memo_count } = data?.stat || { memo_count : 0 };
+      console.log('memo_count', memo_count)
+      const offset = 50;
+      const res = await Promise.all(
+        Array
+          .from({length: Math.ceil((maxCount || memo_count) / offset)})
+          .map((t, i) => axios.get(`/flomo/api/memo/?offset=${offset*(i+1)}&tz=8:0`, {
+            headers: { cookie, x_xsrf_token },
+          }))
+      )
+      const rows = [];
+      res.forEach(item => {
+        const { memos } = item?.data || { memo: [] };
+        memos.forEach(memo => rows.push({...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`}));
+      })
+      console.log('rows', rows);
+      this.dataSource = rows;
+    }
+  },
 }
 </script>
-
 
 <style scoped lang="less">
 button {

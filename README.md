@@ -23,3 +23,8 @@ npm install
 ```bash
 npm start
 ```
+
+[相对地址vue](./src/App.vue)
+
+[绝对地址ts](/Users/Stanley/Develop/logseq-flomo-plugin/src/main.ts)
+
