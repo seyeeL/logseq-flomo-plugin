@@ -119,8 +119,7 @@ export default {
       const { data } = await axios.get(`/flomo/api/user/${userId}/stat/?tz=8:0`, {
         headers: { cookie, x_xsrf_token },
       });
-      // const { memo_count } = data?.stat || { memo_count : 0 };
-      const memo_count = 5000;
+      const { memo_count } = data?.stat || { memo_count : 0 };
       const offset = 50;
       const queryCount = memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
       // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
