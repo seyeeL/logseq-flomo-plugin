@@ -40,13 +40,14 @@
 <script>
 import axios from 'axios';
 import { SyncOutlined } from "@ant-design/icons-vue";
+import _ from 'lodash'
 
 export default {
   name: 'App',
   components: {
     SyncOutlined
   },
-  data () {
+  data() {
     return {
       visible: true,
       gear: false,
@@ -82,11 +83,12 @@ export default {
       dataSource: [],
       maxCount: 0,
       cookie: '',
-      x_xsrf_token:  '',
-      userId:  '',
+      x_xsrf_token: '',
+      userId: '',
+      syncTags: []
     }
   },
-  async mounted () {
+  async mounted() {
     import('../temp/setting.json').then(s => {
       // TODO: prod 取插件设置
       // const appUserConfig = await logseq.App.getUserConfigs();
@@ -109,24 +111,25 @@ export default {
       logseq.hideMainUI()
     },
     onDetailClick(url) {
-      window.open(url,'_blank')
+      window.open(url, '_blank')
     },
     onSync() {
-      this.fetchMemos()
+      // this.fetchMemos()
+      this.fetchTags()
     },
     async fetchMemos() {
       const { cookie, x_xsrf_token, maxCount, userId } = this;
       const { data } = await axios.get(`/flomo/api/user/${userId}/stat/?tz=8:0`, {
         headers: { cookie, x_xsrf_token },
       });
-      const { memo_count } = data?.stat || { memo_count : 0 };
+      const { memo_count } = data?.stat || { memo_count: 0 };
       const offset = 50;
       const queryCount = memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
       // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
       const queryTimes = Math.ceil(queryCount / offset) + 1;
       const rows = [];
       for (let i = 0; i < queryTimes; i++) {
-        const { data } = await axios.get(`/flomo/api/memo/?offset=${i*offset}&tz=8:0`, {
+        const { data } = await axios.get(`/flomo/api/memo/?offset=${i * offset}&tz=8:0`, {
           headers: {
             // cookie,  // 暂时开发环境先注释cookie
             x_xsrf_token
@@ -134,13 +137,107 @@ export default {
         });
         this.percent = Math.floor(100 / queryTimes) * i;
         if (data?.memos?.length > 0) {
-          data.memos.forEach(memo => rows.push({...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`}));
+          data.memos.forEach(memo => rows.push({ ...memo, memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}` }));
         }
       }
       console.log('flomo fetch success:', rows);
       this.dataSource = rows;
       this.percent = 100;
-    }
+    },
+    async fetchTags() {
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(`/flomo/api/tag`, {
+        headers: { cookie, x_xsrf_token },
+      });
+      console.log('flomo tags success:', data.tags);
+    },
+    handleTags(tags) {
+      tags.forEach((item) => {
+        if (item.name.search('/')) {
+          return
+        }
+        this.fetchMemosByTag(item.name)
+        this.syncTags.push(item.name)
+      })
+    },
+    async fetchMemosByTag(tagName) {
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(`/flomo/api/memo/?tag=${tagName}&tz=8:0`, {
+        headers: { cookie, x_xsrf_token },
+      });
+      console.log('fetchMemosByTag success:', data);
+    },
+    async fetchTags() {
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(`/flomo/api/tag`, {
+        headers: { cookie, x_xsrf_token },
+      });
+      console.log('flomo tags success:', data);
+    },
+    async loadPage(rows) {
+      if (!uri || this.updating) return
+      this.updating = true;
+      try {
+        // let { title: hypothesisTitle, noteMap } = this.getPageNotes(uri)
+        let tag = rows.tags[0]
+        let content = rows.content
+        const logseqTitle = await this.findPageName(uri)
+
+        //If page isn't found, create new one with hypothesisTitle. This approach allows for the title to be changed by the user
+        const pageTitle = logseqTitle ? logseqTitle : 'flomo' + tag;
+        logseq.App.pushState('page', { name: pageTitle })
+        await delay(300)
+        const page = await logseq.Editor.getCurrentPage();
+        if (pageTitle !== page.originalName)
+          throw new Error('page error');
+        await this.loadPageNotes(page, tag, content);
+      } finally {
+        this.updating = false;
+      }
+    },
+    async findPageName(tag) {
+      const finds = (await logseq.DB.datascriptQuery(`
+      [:find (pull ?b [*])
+       :where
+       [?b :block/properties ?p]
+       [?b :block/name _]
+       [(get ?p :flomo-tag) ?t]
+       [(= "${tag}" ?t)]]
+       `)).flat()
+      if (finds.length > 1) {
+        //TODO: throw error
+        throw new Error("Multiple pages has the same title")
+      } else if (finds == 0) {
+        //throw new Error("Page doesn't exist")
+        return
+      } else return finds[0]["original-name"]
+    },
+    async loadPageNotes(page, tag, content) {
+      if (!page || !uri) return
+
+      // hypothesis-uri is the prop by which the plugin identifies each page
+      // hypothesis-naming-scheme is added for improved backwards compatability for later updates
+      const pagePropBlockString = `:PROPERTIES:\n:flomo-tag: ${tag}\n:END:` // for both org and markdown
+      let pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
+      console.log('pageBlocksTree',pageBlocksTree)
+      // let pagePropBlock = pageBlocksTree[0];
+      // if (!pagePropBlock) {
+      //   pagePropBlock = await logseq.Editor.insertBlock(page.name, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
+      //   pageBlocksTree = [pagePropBlock];
+      // }
+      // const blocks = pageBlocksTree.slice(1);
+      // const blockMap = new Map(flatten(blocks).map(b => [b.properties.fid, b]));
+      // const n_b = [...noteMap.values()].filter(n => !blockMap.has(n.properties.fid));
+      // for (const n of n_b) {
+      //   const { fid, updated } = n.properties;
+      //   const content = `${n.content}\n:PROPERTIES:\n:fid:${fid}\n:updated:${updated}\n:END:`;
+      //   const { parent, after } = n;
+      //   const source = blockMap.get(parent ?? after);
+      //   const block = await logseq.Editor.insertBlock(source?.uuid ?? page.name, content, { sibling: !parent, isPageBlock: !source });
+      //   blockMap.set(fid, block);
+      // }
+      // await logseq.Editor.updateBlock(pagePropBlock.uuid, pagePropBlockString);
+    },
   },
 }
 </script>
@@ -154,6 +251,6 @@ button {
   text-align: center;
 }
 .sync-button {
-  color: #FFF;
+  color: #fff;
 }
 </style>
