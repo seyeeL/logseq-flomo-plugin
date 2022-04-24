@@ -8,8 +8,8 @@ import "virtual:windi-devtools";
 import 'ant-design-vue/dist/antd.css';
 
 import { createApp } from 'vue'
-const app = createApp(App);
 const isDevelopment = import.meta.env.DEV
+const app = createApp(App);
 app.use(Antd).mount('#app');
 import App from './App.vue';
 
@@ -22,7 +22,7 @@ const magicKey = `__${PL.id}__loaded__`;
 function main() {
   const pluginId = logseq.baseInfo.id;
   console.info(`#${pluginId}: MAIN`);
-  
+
   createApp(App).mount('#app');
 
   function createModel() {
@@ -58,22 +58,23 @@ function main() {
     }
   `);
 
-  logseq.provideUI({
-    key: openIconName,
-    path: "#search",
-    template: `
-      <a data-on-click="show"
-         style="opacity: .6; display: inline-flex;">⚙️</a>
-    `,
+  // logseq.provideUI({
+  //   key: openIconName,
+  //   path: "#search",
+  //   template: `
+  //     <a data-on-click="show"
+  //        style="opacity: .6; display: inline-flex;">⚙️</a>
+  //   `,
+  // });
+
+  logseq.App.registerUIItem('toolbar', {
+    key: 'flomo',
+    template: `<a data-on-click="show" title="flomo" class="button">flomo</a>`,
   });
 }
 
-// @ts-expect-error
-if (top[magicKey]) {
-  top.location.reload();
-}
-
 logseq.ready(main).catch(console.error);
-if (isDevelopment) {
-  app.mount('#root')
-}
+
+// if (isDevelopment) {
+//   app.mount('#root')
+// }

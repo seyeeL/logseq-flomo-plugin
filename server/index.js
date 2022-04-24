@@ -22,9 +22,8 @@ function onProxyReq(proxyReq, req, res) {
   proxyReq.setHeader('accept', 'application/json, text/plain, */*');
   proxyReq.setHeader('accept-encoding', 'gzip, deflate, br');
   proxyReq.setHeader('user-agent', 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43');
-  proxyReq.setHeader('accept', 'XMLHttpRequest');
   proxyReq.setHeader('referer', 'https://flomoapp.com/mine?tag=inbox');
-  proxyReq.setHeader('x-requested-with', 'foobar');
+  proxyReq.setHeader('x-requested-with', 'XMLHttpRequest');
 
   const { cookie } = require('../temp/setting.json');
   proxyReq.setHeader('cookie', cookie);

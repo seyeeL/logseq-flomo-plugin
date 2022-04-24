@@ -1,5 +1,5 @@
 {
-  "name": "logseq-plugin-template-vue",
+  "name": "logseq-flomo-plugin",
   "version": "0.0.1",
   "main": "dist/index.html",
   "scripts": {
@@ -36,7 +36,7 @@
     "windicss": "3.1.7"
   },
   "logseq": {
-    "id": "_pengx17-logseq-template-vue",
+    "id": "logseq-flomo-plugin",
     "icon": "./logo.svg"
   }
 }
