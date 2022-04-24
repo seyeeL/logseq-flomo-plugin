@@ -1,4 +1,7 @@
 import "@logseq/libs";
+
+import { createApp } from 'vue'
+import App from './App.vue';
 import Antd from 'ant-design-vue';
 import "virtual:windi-base.css";
 import "virtual:windi-components.css";
@@ -7,33 +10,27 @@ import "virtual:windi-utilities.css";
 import "virtual:windi-devtools";
 import 'ant-design-vue/dist/antd.css';
 
-import { createApp } from 'vue'
 const isDevelopment = import.meta.env.DEV
-const app = createApp(App);
-app.use(Antd).mount('#app');
-import App from './App.vue';
 
 import { logseq as PL } from "../package.json";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
 const magicKey = `__${PL.id}__loaded__`;
-
+/**
+ * user model
+ */
+function createModel() {
+  return {
+    openFlomo() {
+      logseq.showMainUI()
+    },
+  }
+}
 function main() {
   const pluginId = logseq.baseInfo.id;
   console.info(`#${pluginId}: MAIN`);
 
-  createApp(App).mount('#app');
-
-  function createModel() {
-    return {
-      show() {
-        logseq.showMainUI();
-      },
-    };
-  }
-
-  logseq.provideModel(createModel());
   logseq.setMainUIInlineStyle({
     zIndex: 11,
   });
@@ -71,9 +68,11 @@ function main() {
     key: 'flomo',
     template: `<a data-on-click="show" title="flomo" class="button">flomo</a>`,
   });
+  // main UI
+  createApp(App).use(Antd, {}).mount('#app')
 }
 
-logseq.ready(main).catch(console.error);
+logseq.ready(createModel()).then(main)
 
 // if (isDevelopment) {
 //   app.mount('#root')
