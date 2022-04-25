@@ -41,6 +41,8 @@ function main() {
   top[magicKey] = true;
 
   logseq.provideStyle(css`
+    @import url("https://at.alicdn.com/t/font_3354931_e10iisbf1yu.css");
+
     div[data-injected-ui=${openIconName}-${pluginId}] {
       display: inline-flex;
       align-items: center;
@@ -65,9 +67,13 @@ function main() {
   // });
 
   logseq.App.registerUIItem('toolbar', {
-    key: 'flomo',
-    template: `<a data-on-click="show" title="flomo" class="button">flomo</a>`,
-  });
+    key: 'open-flomo',
+    template: `
+      <a class="button" data-on-click="openFlomo">
+        <i class="iconfont icon-flomo"></i>
+      </a>
+    `,
+  })
   // main UI
   createApp(App).use(Antd, {}).mount('#app')
 }
