@@ -6,16 +6,16 @@
     <div class="sync-block">
       <a-button class="sync-button" type="primary" :loading="percent > 0 && percent !== 100" @click="onSync">
         <template #icon>
-          <SyncOutlined/>
+          <SyncOutlined />
         </template>
         Sync
       </a-button>
     </div>
     <div class="sync-block" v-if="percent > 0 && percent !== 100">
-      <a-progress stroke-linecap="square" :percent="percent" type="circle"/>
+      <a-progress stroke-linecap="square" :percent="percent" type="circle" />
     </div>
     <a-table v-if="percent === 100" :dataSource="dataSource" :columns="columns" bordered
-             :row-key="record => record.slug">
+      :row-key="record => record.slug">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.dataIndex === 'slug'">
           <span>
@@ -24,10 +24,7 @@
         </template>
         <template v-else-if="column.dataIndex === 'tags'">
           <span>
-            <a-tag
-                v-for="tag in record.tags"
-                :key="tag"
-            >
+            <a-tag v-for="tag in record.tags" :key="tag">
               {{ tag }}
             </a-tag>
           </span>
@@ -42,7 +39,7 @@
 
 <script>
 import axios from 'axios';
-import {SyncOutlined} from "@ant-design/icons-vue";
+import { SyncOutlined } from "@ant-design/icons-vue";
 import _ from "lodash";
 
 const isDevelopment = import.meta.env.DEV
@@ -103,6 +100,14 @@ export default {
       syncTags: [],
     };
   },
+  watch: {
+    visible(value) {
+      console.log('watch visible', value)
+      if (!value) {
+        this.hideMainUI()
+      }
+    }
+  },
   async mounted() {
     const setUserData = (s) => {
       this.maxCount = s.maxCount;
@@ -122,7 +127,7 @@ export default {
       setUserData(s);
     }
     console.log('this', this.maxCount)
-    const {cookie, x_xsrf_token} = this;
+    const { cookie, x_xsrf_token } = this;
     console.log('x_xsrf_token', x_xsrf_token)
     console.log('cookie', cookie)
     fetch('https://flomoapp.com/api/tag', {
@@ -146,7 +151,7 @@ export default {
     // });
     // console.log("flomo tags success:", data.tags);
 
-    logseq.on('ui:visible:changed', async ({visible}) => {
+    logseq.on('ui:visible:changed', async ({ visible }) => {
       console.log('visible', visible)
       if (visible) {
         this.visible = visible;
@@ -155,7 +160,7 @@ export default {
   },
   methods: {
     hideMainUI() {
-      this.gear = false;
+      // this.gear = false;
       logseq.hideMainUI();
     },
     onDetailClick(url) {
@@ -166,37 +171,37 @@ export default {
       this.fetchTags();
     },
     async fetchMemos() {
-      const {cookie, x_xsrf_token, maxCount, userId} = this;
-      const {data} = await axios.get(
-          `/api/user/${userId}/stat/?tz=8:0`,
-          {
-            headers: {cookie, x_xsrf_token},
-          }
+      const { cookie, x_xsrf_token, maxCount, userId } = this;
+      const { data } = await axios.get(
+        `/api/user/${userId}/stat/?tz=8:0`,
+        {
+          headers: { cookie, x_xsrf_token },
+        }
       );
-      const {memo_count} = data?.stat || {memo_count: 0};
+      const { memo_count } = data?.stat || { memo_count: 0 };
       const offset = 50;
       const queryCount =
-          memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
+        memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
       // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
       const queryTimes = Math.ceil(queryCount / offset) + 1;
       const rows = [];
       for (let i = 0; i < queryTimes; i++) {
-        const {data} = await axios.get(
-            `/api/memo/?offset=${i * offset}&tz=8:0`,
-            {
-              headers: {
-                cookie,
-                x_xsrf_token,
-              },
-            }
+        const { data } = await axios.get(
+          `/api/memo/?offset=${i * offset}&tz=8:0`,
+          {
+            headers: {
+              cookie,
+              x_xsrf_token,
+            },
+          }
         );
         this.percent = Math.floor(100 / queryTimes) * i;
         if (data?.memos?.length > 0) {
           data.memos.forEach((memo) =>
-              rows.push({
-                ...memo,
-                memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-              })
+            rows.push({
+              ...memo,
+              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+            })
           );
         }
       }
@@ -205,9 +210,9 @@ export default {
       this.percent = 100;
     },
     async fetchTags() {
-      const {cookie, x_xsrf_token} = this;
-      const {data} = await axios.get(`/flomo/api/tag`, {
-        headers: {cookie, x_xsrf_token},
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(`/flomo/api/tag`, {
+        headers: { cookie, x_xsrf_token },
       });
       console.log("flomo tags success:", data.tags);
     },
@@ -221,19 +226,19 @@ export default {
       });
     },
     async fetchMemosByTag(tagName) {
-      const {cookie, x_xsrf_token} = this;
-      const {data} = await axios.get(
-          `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
-          {
-            headers: {cookie, x_xsrf_token},
-          }
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(
+        `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
+        {
+          headers: { cookie, x_xsrf_token },
+        }
       );
       console.log("fetchMemosByTag success:", data);
     },
     async fetchTags() {
-      const {cookie, x_xsrf_token} = this;
-      const {data} = await axios.get(`/flomo/api/tag`, {
-        headers: {cookie, x_xsrf_token},
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(`/flomo/api/tag`, {
+        headers: { cookie, x_xsrf_token },
       });
       console.log("flomo tags success:", data);
     },
@@ -248,7 +253,7 @@ export default {
 
         //If page isn't found, create new one with hypothesisTitle. This approach allows for the title to be changed by the user
         const pageTitle = logseqTitle ? logseqTitle : "flomo" + tag;
-        logseq.App.pushState("page", {name: pageTitle});
+        logseq.App.pushState("page", { name: pageTitle });
         await delay(300);
         const page = await logseq.Editor.getCurrentPage();
         if (pageTitle !== page.originalName) throw new Error("page error");
@@ -259,7 +264,7 @@ export default {
     },
     async findPageName(tag) {
       const finds = (
-          await logseq.DB.datascriptQuery(`
+        await logseq.DB.datascriptQuery(`
       [:find (pull ?b [*])
        :where
        [?b :block/properties ?p]
