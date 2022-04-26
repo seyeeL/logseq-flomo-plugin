@@ -25,8 +25,8 @@
         <template v-else-if="column.dataIndex === 'tags'">
           <span>
             <a-tag
-              v-for="tag in record.tags"
-              :key="tag"
+                v-for="tag in record.tags"
+                :key="tag"
             >
               {{ tag }}
             </a-tag>
@@ -64,7 +64,7 @@ export default {
   },
   data() {
     return {
-      visible: true,
+      visible: false,
       gear: false,
       percent: 0,
       columns: [
@@ -111,18 +111,43 @@ export default {
       this.userId = s.userId;
     };
     if (isDevelopment) {
-      import("../temp/setting.json").then((s) => {
-        console.log('dev', s);
-        setUserData(s);
-      });
+      // import("../temp/setting.json").then((s) => {
+      //   console.log('dev', s);
+      //   setUserData(s);
+      // });
     } else {
       const appUserConfig = await logseq.App.getUserConfigs();
       const s = logseq.settings;
       console.log('prod', s);
       setUserData(s);
     }
+    console.log('this', this.maxCount)
+    const {cookie, x_xsrf_token} = this;
+    console.log('x_xsrf_token', x_xsrf_token)
+    console.log('cookie', cookie)
+    fetch('https://flomoapp.com/api/tag', {
+      method: 'GET',
+      mode: "cors", // same-origin，no-cors
+      referrer: 'https://flomoapp.com/mine?tag=inbox',
+      credentials: 'include',
+      headers: {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br',
+        'user-agent': 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
+        'x-requested-with': 'XMLHttpRequest',
+        'cookie': this.cookie,
+        'x_xsrf_token': this.x_xsrf_token,
+      },
+    }).then(res => {
+      console.log('res', res)
+    })
+    // const {data} = await axios.get(`/flomo/api/tag`, {
+    //   headers: {cookie, x_xsrf_token},
+    // });
+    // console.log("flomo tags success:", data.tags);
 
     logseq.on('ui:visible:changed', async ({visible}) => {
+      console.log('visible', visible)
       if (visible) {
         this.visible = visible;
       }
@@ -143,35 +168,35 @@ export default {
     async fetchMemos() {
       const {cookie, x_xsrf_token, maxCount, userId} = this;
       const {data} = await axios.get(
-        `/api/user/${userId}/stat/?tz=8:0`,
-        {
-          headers: {cookie, x_xsrf_token},
-        }
+          `/api/user/${userId}/stat/?tz=8:0`,
+          {
+            headers: {cookie, x_xsrf_token},
+          }
       );
       const {memo_count} = data?.stat || {memo_count: 0};
       const offset = 50;
       const queryCount =
-        memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
+          memo_count >= maxCount && maxCount !== 0 ? maxCount : memo_count;
       // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
       const queryTimes = Math.ceil(queryCount / offset) + 1;
       const rows = [];
       for (let i = 0; i < queryTimes; i++) {
         const {data} = await axios.get(
-          `/api/memo/?offset=${i * offset}&tz=8:0`,
-          {
-            headers: {
-              cookie,
-              x_xsrf_token,
-            },
-          }
+            `/api/memo/?offset=${i * offset}&tz=8:0`,
+            {
+              headers: {
+                cookie,
+                x_xsrf_token,
+              },
+            }
         );
         this.percent = Math.floor(100 / queryTimes) * i;
         if (data?.memos?.length > 0) {
           data.memos.forEach((memo) =>
-            rows.push({
-              ...memo,
-              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-            })
+              rows.push({
+                ...memo,
+                memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+              })
           );
         }
       }
@@ -198,10 +223,10 @@ export default {
     async fetchMemosByTag(tagName) {
       const {cookie, x_xsrf_token} = this;
       const {data} = await axios.get(
-        `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
-        {
-          headers: {cookie, x_xsrf_token},
-        }
+          `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
+          {
+            headers: {cookie, x_xsrf_token},
+          }
       );
       console.log("fetchMemosByTag success:", data);
     },
@@ -234,7 +259,7 @@ export default {
     },
     async findPageName(tag) {
       const finds = (
-        await logseq.DB.datascriptQuery(`
+          await logseq.DB.datascriptQuery(`
       [:find (pull ?b [*])
        :where
        [?b :block/properties ?p]

@@ -1,17 +1,5 @@
-# dependencies
-**/node_modules
-**/npm-debug.log*
-**/yarn-error.log
-**/yarn.lock
-**/package-lock.json
-**/pnpm-lock.yaml
-
-# output
-**/dist
-**/out
-
-# misc
+node_modules
 .DS_Store
-.idea/
-
-
+dist
+dist-ssr
+*.local

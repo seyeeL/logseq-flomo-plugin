@@ -2,41 +2,30 @@
   "name": "logseq-flomo-plugin",
   "version": "0.0.1",
   "main": "dist/index.html",
+  "author": "©Logseq",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
-    "postversion": "git push && git push --tags"
-  },
-  "license": "MIT",
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
+    "build": "vite build"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
     "@logseq/libs": "^0.0.1-alpha.26",
+    "@popperjs/core": "^2.9.1",
     "ant-design-vue": "^3.1.1",
     "axios": "^0.26.1",
+    "dayjs": "^1.10.4",
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
+    "unplugin-vue-components": "^0.19.3",
     "vue": "^3.2.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^11.0.0",
-    "@commitlint/config-conventional": "^11.0.0",
     "@vitejs/plugin-vue": "^1.6.0",
-    "@vue/compiler-sfc": "^3.2.6",
-    "conventional-changelog-cli": "^2.1.1",
-    "husky": "^4.3.8",
-    "typescript": "4.4.2",
-    "vite": "2.5.1",
-    "vite-plugin-windicss": "1.3.0",
-    "windicss": "3.1.7"
+    "@vue/compiler-sfc": "^3.0.4",
+    "vite": "^2.5.1"
   },
   "logseq": {
     "id": "logseq-flomo-plugin",
-    "icon": "./logo.svg"
+    "icon": "./icon.png"
   }
 }
