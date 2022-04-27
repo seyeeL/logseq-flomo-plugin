@@ -1,29 +1,31 @@
-import '@logseq/libs'
-import { createApp } from 'vue'
-import App from './App.vue'
-import './index.css'
+import '@logseq/libs';
+import { createApp } from 'vue';
+import App from './App.vue';
+import './index.css';
+const isDevelopment = import.meta.env.DEV
+const app = createApp(App)
 
 /**
  * user model
  */
-function createModel () {
+function createModel() {
   return {
-    openFlomo () {
-      logseq.showMainUI()
+    openFlomo() {
+      logseq.showMainUI();
     },
-  }
+  };
 }
 
 /**
  * app entry
  */
-function main () {
+function main() {
   logseq.setMainUIInlineStyle({
     position: 'fixed',
     zIndex: 11,
-  })
-
-  const key = logseq.baseInfo.id
+  });
+  console.log('main');
+  const key = logseq.baseInfo.id;
 
   logseq.provideStyle(`
     @import url("https://at.alicdn.com/t/font_3354931_e10iisbf1yu.css");
@@ -44,7 +46,7 @@ function main () {
     div[data-injected-ui=open-calendar-${key}] iconfont {
       font-size: 18px;
     }
-  `)
+  `);
 
   // external btns
   logseq.App.registerUIItem('toolbar', {
@@ -54,11 +56,15 @@ function main () {
         <i class="iconfont icon-flomo"></i>
       </a>
     `,
-  })
+  });
 
   // main UI
-  createApp(App).mount('#app')
+  createApp(App).mount('#app');
 }
 
-// bootstrap
-logseq.ready(createModel()).then(main)
+if (isDevelopment) {
+  app.mount('#app')
+} else {
+  // bootstrap
+  logseq.ready(createModel()).then(main);
+}

@@ -109,6 +109,7 @@ export default {
     }
   },
   async mounted() {
+    console.log('mounted')
     const setUserData = (s) => {
       this.maxCount = s.maxCount;
       this.cookie = s.cookie;
@@ -120,6 +121,7 @@ export default {
         console.log('dev', s);
         setUserData(s);
       });
+      this.visible = true
     } else {
       const appUserConfig = await logseq.App.getUserConfigs();
       const s = logseq.settings;
@@ -191,42 +193,55 @@ export default {
         headers: { fuck_cookie: cookie, x_xsrf_token },
       });
       console.log("flomo tags success:", data.tags);
+      this.handleByTags(data.tags)
     },
-    handleTags(tags) {
-      tags.forEach((item) => {
-        if (item.name.search("/")) {
-          return;
+    async handleByTags(tags) {
+      for (let i = 0; i < tags.length; i++) {
+        // if (i.name.search("/")) {
+        //   continue;
+        // }
+        if (i > 1) {
+          return
         }
-        this.fetchMemosByTag(item.name);
-        this.syncTags.push(item.name);
-      });
+        const { data } = await this.fetchMemosByTag(i.name);
+        console.log("handleByTags success:", data);
+        this.percent = Math.floor(100 / tags.length) * i;
+        if (data?.memos?.length > 0) {
+          data.memos.forEach((memo) =>
+            rows.push({
+              ...memo,
+              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+            })
+          );
+          await this.loadPage(i.name, data.memos)
+        }
+      }
     },
     async fetchMemosByTag(tagName) {
       const { cookie, x_xsrf_token } = this;
       const { data } = await axios.get(
         `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
         {
-          headers: { cookie, x_xsrf_token },
+          headers: { fuck_cookie: cookie, x_xsrf_token },
         }
       );
       console.log("fetchMemosByTag success:", data);
     },
-    async loadPage(rows) {
-      if (!uri || this.updating) return;
+    async loadPage(tag, memos) {
+      if (!tag || this.updating) return;
       this.updating = true;
       try {
         // let { title: hypothesisTitle, noteMap } = this.getPageNotes(uri)
-        let tag = rows.tags[0];
-        let content = rows.content;
-        const logseqTitle = await this.findPageName(uri);
+        const logseqTitle = await this.findPageName(tag);
 
         //If page isn't found, create new one with hypothesisTitle. This approach allows for the title to be changed by the user
-        const pageTitle = logseqTitle ? logseqTitle : "flomo" + tag;
-        logseq.App.pushState("page", { name: pageTitle });
-        await delay(300);
-        const page = await logseq.Editor.getCurrentPage();
-        if (pageTitle !== page.originalName) throw new Error("page error");
-        await this.loadPageNotes(page, tag, content);
+        const pageTitle = logseqTitle ? logseqTitle : "flomo/" + tag;
+        // 猜测是跳转到页面
+        // logseq.App.pushState("page", { name: pageTitle });
+        // await delay(300);
+        // const page = await logseq.Editor.getCurrentPage();
+        // if (pageTitle !== page.originalName) throw new Error("page error");
+        await this.loadPageNotes(pageTitle, memos);
       } finally {
         this.updating = false;
       }
@@ -250,29 +265,29 @@ export default {
         return;
       } else return finds[0]["original-name"];
     },
-    async loadPageNotes(page, tag, content) {
-      if (!page || !uri) return;
+    async loadPageNotes(pageTitle, memos) {
+      if (!pageTitle || !memos) return;
 
       // hypothesis-uri is the prop by which the plugin identifies each page
       // hypothesis-naming-scheme is added for improved backwards compatability for later updates
       const pagePropBlockString = `:PROPERTIES:\n:flomo-tag: ${tag}\n:END:`; // for both org and markdown
-      let pageBlocksTree = await logseq.Editor.getCurrentPageBlocksTree();
+      let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageTitle);
       console.log("pageBlocksTree", pageBlocksTree);
-      // let pagePropBlock = pageBlocksTree[0];
-      // if (!pagePropBlock) {
-      //   pagePropBlock = await logseq.Editor.insertBlock(page.name, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
-      //   pageBlocksTree = [pagePropBlock];
-      // }
-      // const blocks = pageBlocksTree.slice(1);
-      // const blockMap = new Map(flatten(blocks).map(b => [b.properties.fid, b]));
-      // const n_b = [...noteMap.values()].filter(n => !blockMap.has(n.properties.fid));
+      let pagePropBlock = pageBlocksTree[0];
+      if (!pagePropBlock) {
+        pagePropBlock = await logseq.Editor.insertBlock(pageTitle, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
+        pageBlocksTree = [pagePropBlock];
+      }
+      const blocks = pageBlocksTree.slice(1);
+      // const blockMap = new Map(flatten(blocks).map(b => [b.properties.hid, b]));
+      // const n_b = [...noteMap.values()].filter(n => !blockMap.has(n.properties.hid));
       // for (const n of n_b) {
-      //   const { fid, updated } = n.properties;
-      //   const content = `${n.content}\n:PROPERTIES:\n:fid:${fid}\n:updated:${updated}\n:END:`;
+      //   const { hid, updated } = n.properties;
+      //   const content = `${n.content}\n:PROPERTIES:\n:hid:${hid}\n:updated:${updated}\n:END:`;
       //   const { parent, after } = n;
       //   const source = blockMap.get(parent ?? after);
       //   const block = await logseq.Editor.insertBlock(source?.uuid ?? page.name, content, { sibling: !parent, isPageBlock: !source });
-      //   blockMap.set(fid, block);
+      //   blockMap.set(hid, block);
       // }
       // await logseq.Editor.updateBlock(pagePropBlock.uuid, pagePropBlockString);
     },
