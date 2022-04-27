@@ -24,9 +24,8 @@ function onProxyReq(proxyReq, req, res) {
   proxyReq.setHeader('user-agent', 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43');
   proxyReq.setHeader('referer', 'https://flomoapp.com/mine?tag=inbox');
   proxyReq.setHeader('x-requested-with', 'XMLHttpRequest');
-
-  const { cookie } = require('../temp/setting.json');
-  proxyReq.setHeader('cookie', cookie);
+  proxyReq.setHeader('cookie', req.headers['fuck_cookie']);
+  delete req.headers['x-fuck_cookie']
 }
 
 // Start the Proxy
