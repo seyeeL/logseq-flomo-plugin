@@ -45,14 +45,14 @@ import _ from "lodash";
 const isDevelopment = import.meta.env.DEV
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = 'https://flomoapp.com';
-axios.defaults.headers = {
-  'accept': 'application/json, text/plain, */*',
-  'accept-encoding': 'gzip, deflate, br',
-  'user-agent': 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
-  'referer': 'https://flomoapp.com/mine?tag=inbox',
-  'x-requested-with': 'XMLHttpRequest',
-};
+axios.defaults.baseURL = 'http://localhost:3000';
+// axios.defaults.headers = {
+//   'accept': 'application/json, text/plain, */*',
+//   'accept-encoding': 'gzip, deflate, br',
+//   'user-agent': 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
+//   'referer': 'https://flomoapp.com/mine?tag=inbox',
+//   'x-requested-with': 'XMLHttpRequest',
+// };
 
 export default {
   name: "App",
@@ -116,40 +116,16 @@ export default {
       this.userId = s.userId;
     };
     if (isDevelopment) {
-      // import("../temp/setting.json").then((s) => {
-      //   console.log('dev', s);
-      //   setUserData(s);
-      // });
+      import("../temp/setting.json").then((s) => {
+        console.log('dev', s);
+        setUserData(s);
+      });
     } else {
       const appUserConfig = await logseq.App.getUserConfigs();
       const s = logseq.settings;
       console.log('prod', s);
       setUserData(s);
     }
-    console.log('this', this.maxCount)
-    const { cookie, x_xsrf_token } = this;
-    console.log('x_xsrf_token', x_xsrf_token)
-    console.log('cookie', cookie)
-    fetch('https://flomoapp.com/api/tag', {
-      method: 'GET',
-      mode: "cors", // same-origin，no-cors
-      referrer: 'https://flomoapp.com/mine?tag=inbox',
-      credentials: 'include',
-      headers: {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br',
-        'user-agent': 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
-        'x-requested-with': 'XMLHttpRequest',
-        'cookie': this.cookie,
-        'x_xsrf_token': this.x_xsrf_token,
-      },
-    }).then(res => {
-      console.log('res', res)
-    })
-    // const {data} = await axios.get(`/flomo/api/tag`, {
-    //   headers: {cookie, x_xsrf_token},
-    // });
-    // console.log("flomo tags success:", data.tags);
 
     logseq.on('ui:visible:changed', async ({ visible }) => {
       console.log('visible', visible)
@@ -173,9 +149,9 @@ export default {
     async fetchMemos() {
       const { cookie, x_xsrf_token, maxCount, userId } = this;
       const { data } = await axios.get(
-        `/api/user/${userId}/stat/?tz=8:0`,
+        `/flomo/api/user/${userId}/stat/?tz=8:0`,
         {
-          headers: { cookie, x_xsrf_token },
+          headers: { fuck_cookie: cookie, x_xsrf_token },
         }
       );
       const { memo_count } = data?.stat || { memo_count: 0 };
@@ -187,7 +163,7 @@ export default {
       const rows = [];
       for (let i = 0; i < queryTimes; i++) {
         const { data } = await axios.get(
-          `/api/memo/?offset=${i * offset}&tz=8:0`,
+          `/flomo/api/memo/?offset=${i * offset}&tz=8:0`,
           {
             headers: {
               cookie,
@@ -212,7 +188,7 @@ export default {
     async fetchTags() {
       const { cookie, x_xsrf_token } = this;
       const { data } = await axios.get(`/flomo/api/tag`, {
-        headers: { cookie, x_xsrf_token },
+        headers: { fuck_cookie: cookie, x_xsrf_token },
       });
       console.log("flomo tags success:", data.tags);
     },
@@ -234,13 +210,6 @@ export default {
         }
       );
       console.log("fetchMemosByTag success:", data);
-    },
-    async fetchTags() {
-      const { cookie, x_xsrf_token } = this;
-      const { data } = await axios.get(`/flomo/api/tag`, {
-        headers: { cookie, x_xsrf_token },
-      });
-      console.log("flomo tags success:", data);
     },
     async loadPage(rows) {
       if (!uri || this.updating) return;
