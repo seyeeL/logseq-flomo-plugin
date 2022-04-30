@@ -15,16 +15,17 @@ Load unpacked plugin in Logseq Desktop client.
 ```bash
 cd server 
 ```
+
 2. install dependencies
 ```bash
 npm install
 ```
-3. run the server, it will proxy http://localhost:3000 to https://flomoapp.com
+
+3. run the server, it will proxy http://localhost:3828 to https://flomoapp.com.
 ```bash
 npm start
 ```
+> It will be moved to another repo in later.
 
-[相对地址vue](./src/App.vue)
 
-[绝对地址ts](/Users/Stanley/Develop/logseq-flomo-plugin/src/main.ts)
-
+4. open http://localhost:3000
