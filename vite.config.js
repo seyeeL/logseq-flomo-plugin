@@ -20,5 +20,10 @@ export default {
         changeOrigin: true,
       },
     },
+  },
+  build: {
+    watch: {
+      include: 'src/**'
+    }
   }
 }
