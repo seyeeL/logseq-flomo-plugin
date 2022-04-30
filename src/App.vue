@@ -194,13 +194,15 @@ export default {
     },
     async handleByTags(tags) {
       for (let i = 0; i < tags.length; i++) {
+        let tagName = tags[i].name
         // if (i.name.search("/")) {
         //   continue;
         // }
         if (i > 1) {
           return
         }
-        const { data } = await this.fetchMemosByTag(i.name);
+        const data = await this.fetchMemosByTag(tagName);
+        const rows = []
         console.log("handleByTags success:", data);
         this.percent = Math.floor(100 / tags.length) * i;
         if (data?.memos?.length > 0) {
@@ -210,7 +212,7 @@ export default {
               memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
             })
           );
-          await this.loadPage(i.name, data.memos)
+          await this.loadPage(tagName, rows)
         }
       }
     },
@@ -223,27 +225,48 @@ export default {
         }
       );
       console.log("fetchMemosByTag success:", data);
+      return data
     },
     async loadPage(tag, memos) {
       if (!tag || this.updating) return;
       this.updating = true;
       try {
         // let { title: hypothesisTitle, noteMap } = this.getPageNotes(uri)
-        const logseqTitle = await this.findPageName(tag);
+
 
         //If page isn't found, create new one with hypothesisTitle. This approach allows for the title to be changed by the user
-        const pageTitle = logseqTitle ? logseqTitle : "flomo/" + tag;
+        const pageName = "flomo/" + tag;
+        console.log('pageName', pageName)
         // 猜测是跳转到页面
-        // logseq.App.pushState("page", { name: pageTitle });
-        // await delay(300);
-        // const page = await logseq.Editor.getCurrentPage();
-        // if (pageTitle !== page.originalName) throw new Error("page error");
-        await this.loadPageNotes(pageTitle, memos);
+        let page = await logseq.Editor.getPage(pageName);
+        const pagePropBlockString = { "flomo-tag": tag }; // for both org and markdown
+        if (!page) {
+          const result = await logseq.Editor.createPage(
+            pageName,
+            pagePropBlockString,
+            {
+              createFirstBlock: true,
+              redirect: false,
+              journal: false,
+            }
+          );
+          console.log('createPage', result)
+          // await this.loadPageNotes(pageName, memos, tag);
+        }
+        this.loadPageNotes(pageName, memos, tag)
       } finally {
         this.updating = false;
       }
     },
     async findPageName(tag) {
+      console.log('findPageName', logseq.DB.datascriptQuery(`
+      [:find (pull ?b [*])
+       :where
+       [?b :block/properties ?p]
+       [?b :block/name _]
+       [(get ?p :flomo-tag) ?t]
+       [(= "${tag}" ?t)]]
+       `))
       const finds = (
         await logseq.DB.datascriptQuery(`
       [:find (pull ?b [*])
@@ -262,30 +285,31 @@ export default {
         return;
       } else return finds[0]["original-name"];
     },
-    async loadPageNotes(pageTitle, memos) {
-      if (!pageTitle || !memos) return;
+    async loadPageNotes(pageName, memos, tag) {
+      if (!pageName || !memos) return;
 
       // hypothesis-uri is the prop by which the plugin identifies each page
       // hypothesis-naming-scheme is added for improved backwards compatability for later updates
       const pagePropBlockString = `:PROPERTIES:\n:flomo-tag: ${tag}\n:END:`; // for both org and markdown
-      let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageTitle);
+      let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock = pageBlocksTree[0];
+      let pageUuid = pageBlocksTree[0].uuid
       if (!pagePropBlock) {
-        pagePropBlock = await logseq.Editor.insertBlock(pageTitle, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
+        pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
         pageBlocksTree = [pagePropBlock];
       }
-      const blocks = pageBlocksTree.slice(1);
-      // const blockMap = new Map(flatten(blocks).map(b => [b.properties.hid, b]));
-      // const n_b = [...noteMap.values()].filter(n => !blockMap.has(n.properties.hid));
-      // for (const n of n_b) {
-      //   const { hid, updated } = n.properties;
-      //   const content = `${n.content}\n:PROPERTIES:\n:hid:${hid}\n:updated:${updated}\n:END:`;
-      //   const { parent, after } = n;
-      //   const source = blockMap.get(parent ?? after);
-      //   const block = await logseq.Editor.insertBlock(source?.uuid ?? page.name, content, { sibling: !parent, isPageBlock: !source });
-      //   blockMap.set(hid, block);
-      // }
+      // const blocks = pageBlocksTree.slice(1);
+      // console.log('blocks', blocks)
+      for (const memo of memos) {
+        const { content, memo_url, updated_at, slug } = memo;
+        const n_content = `${content}\n:PROPERTIES:\n:memo_url:${memo_url}\n:fid:${slug}\n:updated:${updated_at}\n:END:`;
+        // const { parent, after } = n;
+        // const source = blockMap.get(parent ?? after);
+        const block = await logseq.Editor.insertBlock(pageUuid, n_content, { sibling: false, isPageBlock: false });
+        // blockMap.set(hid, block);
+        console.log('block', block)
+      }
       // await logseq.Editor.updateBlock(pagePropBlock.uuid, pagePropBlockString);
     },
   },
