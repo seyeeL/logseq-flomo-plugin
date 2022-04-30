@@ -42,17 +42,7 @@ import axios from 'axios';
 import { SyncOutlined } from "@ant-design/icons-vue";
 import _ from "lodash";
 
-const isDevelopment = import.meta.env.DEV
-
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = 'http://localhost:3000';
-// axios.defaults.headers = {
-//   'accept': 'application/json, text/plain, */*',
-//   'accept-encoding': 'gzip, deflate, br',
-//   'user-agent': 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
-//   'referer': 'https://flomoapp.com/mine?tag=inbox',
-//   'x-requested-with': 'XMLHttpRequest',
-// };
+const isDevelopment = import.meta.env.DEV;
 
 export default {
   name: "App",
@@ -109,12 +99,17 @@ export default {
     }
   },
   async mounted() {
-    console.log('mounted')
+    console.log('mounted');
     const setUserData = (s) => {
       this.maxCount = s.maxCount;
       this.cookie = s.cookie;
       this.x_xsrf_token = s.x_xsrf_token;
       this.userId = s.userId;
+
+      // 把地址设为Proxy server地址，默认地址为flomo的server地址
+      if (!isDevelopment) {
+        axios.defaults.baseURL = s.server || "https://flomoapp.com";
+      }
     };
     if (isDevelopment) {
       import("../temp/setting.json").then((s) => {
@@ -123,7 +118,7 @@ export default {
       });
       this.visible = true
     } else {
-      const appUserConfig = await logseq.App.getUserConfigs();
+      // const appUserConfig = await logseq.App.getUserConfigs();
       const s = logseq.settings;
       console.log('prod', s);
       setUserData(s);
@@ -150,8 +145,9 @@ export default {
     },
     async fetchMemos() {
       const { cookie, x_xsrf_token, maxCount, userId } = this;
+      console.log('cookie', cookie)
       const { data } = await axios.get(
-        `/flomo/api/user/${userId}/stat/?tz=8:0`,
+        `/api/user/${userId}/stat/?tz=8:0`,
         {
           headers: { fuck_cookie: cookie, x_xsrf_token },
         }
@@ -165,10 +161,10 @@ export default {
       const rows = [];
       for (let i = 0; i < queryTimes; i++) {
         const { data } = await axios.get(
-          `/flomo/api/memo/?offset=${i * offset}&tz=8:0`,
+          `/api/memo/?offset=${i * offset}&tz=8:0`,
           {
             headers: {
-              cookie,
+              fuck_cookie: cookie,
               x_xsrf_token,
             },
           }
@@ -189,7 +185,8 @@ export default {
     },
     async fetchTags() {
       const { cookie, x_xsrf_token } = this;
-      const { data } = await axios.get(`/flomo/api/tag`, {
+      console.log('cookie', cookie)
+      const { data } = await axios.get(`/api/tag`, {
         headers: { fuck_cookie: cookie, x_xsrf_token },
       });
       console.log("flomo tags success:", data.tags);
@@ -220,7 +217,7 @@ export default {
     async fetchMemosByTag(tagName) {
       const { cookie, x_xsrf_token } = this;
       const { data } = await axios.get(
-        `/flomo/api/memo/?tag=${tagName}&tz=8:0`,
+        `/api/memo/?tag=${tagName}&tz=8:0`,
         {
           headers: { fuck_cookie: cookie, x_xsrf_token },
         }

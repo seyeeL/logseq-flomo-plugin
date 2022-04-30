@@ -4,28 +4,32 @@ const {createProxyMiddleware} = require('http-proxy-middleware');
 
 const app = express();
 
-const PORT = 3000;
+const PORT = 3228;
 const HOST = 'localhost';
 const API_SERVICE_URL = 'https://flomoapp.com';
 
 // Logging
 app.use(morgan('dev'));
 
-app.use('/flomo', createProxyMiddleware({
-  target: API_SERVICE_URL, changeOrigin: true, onProxyReq, pathRewrite: {
-    [`^/flomo`]: '',
-  },
+app.use('/api', createProxyMiddleware({
+  target: API_SERVICE_URL, changeOrigin: true, onProxyReq,
 }));
 
 function onProxyReq(proxyReq, req, res) {
   // add custom header to request
+  const cookie = req.headers['fuck_cookie'];
+  delete req.headers['fuck_cookie']
+  console.log('onProxyReq[cookie]', cookie)
+  if (!cookie) {
+    console.log('Error: Cookie is undefined')
+    return;
+  }
+  proxyReq.setHeader('cookie', cookie);
   proxyReq.setHeader('accept', 'application/json, text/plain, */*');
   proxyReq.setHeader('accept-encoding', 'gzip, deflate, br');
   proxyReq.setHeader('user-agent', 'Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43');
   proxyReq.setHeader('referer', 'https://flomoapp.com/mine?tag=inbox');
   proxyReq.setHeader('x-requested-with', 'XMLHttpRequest');
-  proxyReq.setHeader('cookie', req.headers['fuck_cookie']);
-  delete req.headers['x-fuck_cookie']
 }
 
 // Start the Proxy

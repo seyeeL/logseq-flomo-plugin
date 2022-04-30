@@ -13,5 +13,12 @@ export default {
   optimizeDeps: {
     // exclude: ['dayjs'],
   },
-  
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3228',
+        changeOrigin: true,
+      },
+    },
+  }
 }
