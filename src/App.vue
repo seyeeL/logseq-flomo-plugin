@@ -41,7 +41,7 @@
 import axios from 'axios';
 import { SyncOutlined } from "@ant-design/icons-vue";
 import _ from "lodash";
-
+import cheerio from 'cheerio' // https://github.com/cheeriojs/cheerio/wiki/Chinese-README
 const isDevelopment = import.meta.env.DEV;
 
 export default {
@@ -195,11 +195,8 @@ export default {
     async handleByTags(tags) {
       for (let i = 0; i < tags.length; i++) {
         let tagName = tags[i].name
-        // if (i.name.search("/")) {
-        //   continue;
-        // }
-        if (i > 1) {
-          return
+        if (tagName.indexOf('/') !== -1) {
+          continue;
         }
         const data = await this.fetchMemosByTag(tagName);
         const rows = []
@@ -231,13 +228,8 @@ export default {
       if (!tag || this.updating) return;
       this.updating = true;
       try {
-        // let { title: hypothesisTitle, noteMap } = this.getPageNotes(uri)
-
-
-        //If page isn't found, create new one with hypothesisTitle. This approach allows for the title to be changed by the user
         const pageName = "flomo/" + tag;
         console.log('pageName', pageName)
-        // 猜测是跳转到页面
         let page = await logseq.Editor.getPage(pageName);
         const pagePropBlockString = { "flomo-tag": tag }; // for both org and markdown
         if (!page) {
@@ -278,7 +270,6 @@ export default {
        `)
       ).flat();
       if (finds.length > 1) {
-        //TODO: throw error
         throw new Error("Multiple pages has the same title");
       } else if (finds == 0) {
         //throw new Error("Page doesn't exist")
@@ -287,31 +278,65 @@ export default {
     },
     async loadPageNotes(pageName, memos, tag) {
       if (!pageName || !memos) return;
-
-      // hypothesis-uri is the prop by which the plugin identifies each page
-      // hypothesis-naming-scheme is added for improved backwards compatability for later updates
       const pagePropBlockString = `:PROPERTIES:\n:flomo-tag: ${tag}\n:END:`; // for both org and markdown
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock = pageBlocksTree[0];
-      let pageUuid = pageBlocksTree[0].uuid
       if (!pagePropBlock) {
         pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
         pageBlocksTree = [pagePropBlock];
       }
+      let pageUuid = pageBlocksTree[0].uuid
       // const blocks = pageBlocksTree.slice(1);
       // console.log('blocks', blocks)
-      for (const memo of memos) {
-        const { content, memo_url, updated_at, slug } = memo;
-        const n_content = `${content}\n:PROPERTIES:\n:memo_url:${memo_url}\n:fid:${slug}\n:updated:${updated_at}\n:END:`;
-        // const { parent, after } = n;
-        // const source = blockMap.get(parent ?? after);
-        const block = await logseq.Editor.insertBlock(pageUuid, n_content, { sibling: false, isPageBlock: false });
-        // blockMap.set(hid, block);
-        console.log('block', block)
-      }
+      this.insertBlock(pageUuid, memos, true)
       // await logseq.Editor.updateBlock(pagePropBlock.uuid, pagePropBlockString);
     },
+    async insertBlock(uuid, memos, sibling) {
+      const regex = /<ol>(<ol>.*?<\/ol>|.)*?<\/ol>|<ul>(<ul>.*?<\/ul>|.)*?<\/ul>/g;
+      for (const memo of memos) {
+        let { content, memo_url, updated_at, slug } = memo;
+        if (content.indexOf('<ol>') !== -1 || content.indexOf('<ul>') !== -1) {
+          let $ = cheerio.load(content);
+          let list_content = $('li').map(function (i, el) {
+            // this === el
+            return `${i + 1}. ${$(this).text()}`;
+          }).get().join('\n');
+          content = content.replace(regex, list_content)
+          console.log('content', content)
+        }
+        if (content.indexOf('<p>') !== -1) {
+          content = content.replace('<p>', '').replace('</p>', '\n')
+          console.log('remove P', content)
+        }
+        const n_content = `${content} [link](${memo_url})\n:PROPERTIES:\nmemo_url:: ${memo_url}\nfid::${slug}\nupdated::${updated_at}\n:END:`;
+        // const { parent, after } = n;
+        // const source = blockMap.get(parent ?? after);
+        const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false });
+        // add a blank block
+        await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false });
+        // blockMap.set(hid, block);
+        console.log('block', block)
+        if (memo.backlinked_count) {
+          const backlinkeds = await this.getBacklinkeds(memo.slug)
+          console.log('backlinkeds', backlinkeds)
+          this.insertBlock(block.uuid, backlinkeds, false)
+        }
+      }
+    },
+    async getBacklinkeds(slug) {
+      const { cookie, x_xsrf_token } = this;
+      const { data } = await axios.get(
+        `/api/memo/${slug}?tz=8:0`,
+        {
+          headers: {
+            fuck_cookie: cookie,
+            x_xsrf_token,
+          },
+        }
+      );
+      return data.memo.backlinkeds
+    }
   },
 };
 </script>
