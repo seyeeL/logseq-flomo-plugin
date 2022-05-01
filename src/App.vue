@@ -306,7 +306,7 @@ export default {
           console.log('content', content)
         }
         if (content.indexOf('<p>') !== -1) {
-          content = content.replace('<p>', '').replace('</p>', '\n')
+          content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
           console.log('remove P', content)
         }
         const n_content = `${content} [link](${memo_url})\n:PROPERTIES:\nmemo_url:: ${memo_url}\nfid::${slug}\nupdated::${updated_at}\n:END:`;
