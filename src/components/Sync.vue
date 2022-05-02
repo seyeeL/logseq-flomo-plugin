@@ -10,7 +10,7 @@
 import { defineComponent, ref, toRefs, reactive } from 'vue';
 import cheerio from 'cheerio';
 
-import {fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo} from '../utils';
+import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
 
 export default defineComponent({
   props: {
@@ -36,10 +36,10 @@ export default defineComponent({
       updating: ref(false),
     });
     const dataRef = toRefs(syncData);
-    async function sync () {
+    async function sync() {
       console.log('sync start')
-      const {cookie, token, server} = syncData;
-      const {tags} = await fetchTagsFromFlomo({cookie, token, server});
+      const { cookie, token, server } = syncData;
+      const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
       if (tags.length > 0) {
         console.log('tags', tags)
         await handleByTags(tags);
@@ -55,17 +55,20 @@ export default defineComponent({
       for (let i = 0; i < tags.length; i++) {
         let tagName = tags[i].name
         console.log(`fetch memos of ${tagName} start`);
-        // if (tagName.indexOf('/') !== -1) {
-        //   continue;
+        if (tagName.indexOf('/') !== -1) {
+          continue;
+        }
+        // if (i > 0) {
+        //   return
         // }
-        const {cookie, token, server} = syncData;
-        const {memos} = await fetchMemosFromFlomoTag({tagName, cookie, token, server});
+        const { cookie, token, server } = syncData;
+        const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
 
-          const rows = memos.map((memo) =>({
-                ...memo,
-                memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-              })
+          const rows = memos.map((memo) => ({
+            ...memo,
+            memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+          })
           );
           console.log(`fetch memos of ${tagName} end:`, rows);
           await loadPage(tagName, rows)
@@ -82,35 +85,41 @@ export default defineComponent({
         const pageName = tag;
         console.log('pageName', pageName)
         let page = await logseq.Editor.getPage(pageName);
-        // const pagePropBlockString = { "flomo-tag": tag }; // for both org and markdown
+        let puuid
         if (!page) {
           const result = await logseq.Editor.createPage(
-              pageName,
-              {},
-              {
-                createFirstBlock: true,
-                redirect: false,
-                journal: false,
-              }
+            pageName,
+            {},
+            {
+              createFirstBlock: true,
+              redirect: false,
+              journal: false,
+            }
           );
           console.log('createPage', result)
-          if (result) {
-            await loadPageNotes(pageName, memos, tag)
-          }
+          puuid = result.uuid
+        } else {
+          puuid = page.uuid
         }
-
+        console.log('uuid', puuid)
+        loadPageNotes(pageName, memos, puuid)
       } finally {
         syncData.updating = false;
       }
     }
-    async function loadPageNotes(pageName, memos, tag) {
+    async function loadPageNotes(pageName, memos, puuid) {
       if (!pageName || !memos) return;
-      const pagePropBlockString = `flomo\n#+flomo_tag:${pageName}`; // for both org and markdown
+      // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown 
+      const pagePropBlockString = `[[flomo]]\n#+flomo_tag:${pageName}`; // org
+      // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag:${pageName}\n:END:`; // both org md 
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock
       let pageUuid
-      if (pageBlocksTree.length) {
+      if (pageBlocksTree.length === 0) {
+        pagePropBlock = await logseq.Editor.insertBlock(puuid, pagePropBlockString, { isPageBlock: false });
+        console.log("pagePropBlock", pageBlocksTree);
+      } else {
         for (let i = 0; i < pageBlocksTree.length; i++) {
           if (pageBlocksTree[i].content.indexOf('flomo_tag') !== -1) {
             pageUuid = pageBlocksTree[i].uuid
@@ -129,13 +138,16 @@ export default defineComponent({
     async function insertBlock(uuid, memos, sibling) {
       for (const item of memos) {
         let { content, memo_url, updated_at, slug, backlinked_count } = item;
-
+        if (content.indexOf('<p>') !== -1) {
+          content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
+          console.log('remove P', content)
+        }
         let $ = cheerio.load(content);
         if (content.indexOf('<ol>') !== -1) {
           $('ol').each(function (i, el) {
             // this === el
             $(this).children().each(function (j, ele) {
-              let str = j === 0 ? `\n${j + 1}. ${$(this).text()}\n` : `${j + 1}. ${$(this).text()}\n`
+              let str = `${j + 1}. ${$(this).text()}\n`
               console.log('str', str)
               $(this).html(str)
             })
@@ -145,7 +157,7 @@ export default defineComponent({
           $('ul').each(function (i, el) {
             // this === el
             $(this).children().each(function (j, ele) {
-              let str = j === 0 ? `\n* ${$(this).text()}\n` : `* ${$(this).text()}\n`
+              let str = `* ${$(this).text()}\n`
               console.log('str', str)
               $(this).html(str)
             })
@@ -153,27 +165,25 @@ export default defineComponent({
         }
         content = $.text()
         console.log('content', content)
-        if (content.indexOf('<p>') !== -1) {
-          content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
-          console.log('remove P', content)
-        }
         content = content.replace(/\n$/, '')
-        const n_content = `${content}\n#+memo_url:${memo_url}\n#+flomo_id:${slug}\n#+updated:${updated_at}`;
+        // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
+        const n_content = `${content}\n#+memo_url:${memo_url}\n#+flomo_id:${slug}\n#+updated:${updated_at}`; // org
+        // const n_content = `${content}\n:PROPERTIES:\n:memo_url:${memo_url}\n:flomo_id:${slug}\n:updated:${updated_at}\n:END:`; // both org md 
         const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
         // add a blank block
         await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false, before: false });
         console.log('block', block)
         if (backlinked_count) {
           console.log('处理反链', item);
-          const {cookie, token, server} = syncData;
-          const {memo} = await getBacklinkedsFromFlomo({slug, cookie, token, server})
+          const { cookie, token, server } = syncData;
+          const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
           if (memo?.backlinkeds?.length > 0) {
             const backlinkeds = memo.backlinkeds
             console.log('backlinkeds', backlinkeds)
-            const rows = backlinkeds.map((memo) =>({
-                  ...memo,
-                  memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-                })
+            const rows = backlinkeds.map((memo) => ({
+              ...memo,
+              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+            })
             );
             await insertBlock(block.uuid, rows, false)
           }

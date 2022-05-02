@@ -47,6 +47,7 @@ export default {
     }
   },
   async mounted() {
+    console.log('refresh flomo plugin');
     if (isDevelopment) {
       import("../temp/setting.json").then((s) => {
         console.log('dev', s);
