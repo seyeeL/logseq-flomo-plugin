@@ -195,23 +195,30 @@ export default {
     async handleByTags(tags) {
       for (let i = 0; i < tags.length; i++) {
         let tagName = tags[i].name
-        if (tagName.indexOf('/') !== -1) {
-          continue;
+        // if (tagName.indexOf('/') !== -1) {
+        //   continue;
+        // }
+        if (i > 0) {
+          return
         }
         const data = await this.fetchMemosByTag(tagName);
-        const rows = []
         console.log("handleByTags success:", data);
         this.percent = Math.floor(100 / tags.length) * i;
         if (data?.memos?.length > 0) {
-          data.memos.forEach((memo) =>
-            rows.push({
-              ...memo,
-              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-            })
-          );
+          const rows = this.handleRows(data.memos)
           await this.loadPage(tagName, rows)
         }
       }
+    },
+    handleRows(memos) {
+      const rows = []
+      memos.forEach((memo) =>
+        rows.push({
+          ...memo,
+          memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+        })
+      );
+      return rows
     },
     async fetchMemosByTag(tagName) {
       const { cookie, x_xsrf_token } = this;
@@ -228,14 +235,14 @@ export default {
       if (!tag || this.updating) return;
       this.updating = true;
       try {
-        const pageName = "flomo/" + tag;
+        const pageName = tag;
         console.log('pageName', pageName)
         let page = await logseq.Editor.getPage(pageName);
-        const pagePropBlockString = { "flomo-tag": tag }; // for both org and markdown
+        // const pagePropBlockString = { "flomo-tag": tag }; // for both org and markdown
         if (!page) {
           const result = await logseq.Editor.createPage(
             pageName,
-            pagePropBlockString,
+            {},
             {
               createFirstBlock: true,
               redirect: false,
@@ -243,84 +250,77 @@ export default {
             }
           );
           console.log('createPage', result)
-          // await this.loadPageNotes(pageName, memos, tag);
         }
         this.loadPageNotes(pageName, memos, tag)
       } finally {
         this.updating = false;
       }
     },
-    async findPageName(tag) {
-      console.log('findPageName', logseq.DB.datascriptQuery(`
-      [:find (pull ?b [*])
-       :where
-       [?b :block/properties ?p]
-       [?b :block/name _]
-       [(get ?p :flomo-tag) ?t]
-       [(= "${tag}" ?t)]]
-       `))
-      const finds = (
-        await logseq.DB.datascriptQuery(`
-      [:find (pull ?b [*])
-       :where
-       [?b :block/properties ?p]
-       [?b :block/name _]
-       [(get ?p :flomo-tag) ?t]
-       [(= "${tag}" ?t)]]
-       `)
-      ).flat();
-      if (finds.length > 1) {
-        throw new Error("Multiple pages has the same title");
-      } else if (finds == 0) {
-        //throw new Error("Page doesn't exist")
-        return;
-      } else return finds[0]["original-name"];
-    },
     async loadPageNotes(pageName, memos, tag) {
       if (!pageName || !memos) return;
-      const pagePropBlockString = `:PROPERTIES:\n:flomo-tag: ${tag}\n:END:`; // for both org and markdown
+      const pagePropBlockString = `flomo\n#+flomo_tag:${pageName}`; // for both org and markdown
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
-      let pagePropBlock = pageBlocksTree[0];
-      if (!pagePropBlock) {
-        pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true, properties: { preBlock: true } });
-        pageBlocksTree = [pagePropBlock];
+      let pagePropBlock
+      let pageUuid
+      if (pageBlocksTree.length) {
+        for (let i = 0; i < pageBlocksTree.length; i++) {
+          if (pageBlocksTree[i].content.indexOf('flomo_tag') !== -1) {
+            pageUuid = pageBlocksTree[i].uuid
+            console.log("pageUuid", pageUuid);
+            break
+          }
+        }
       }
-      let pageUuid = pageBlocksTree[0].uuid
-      // const blocks = pageBlocksTree.slice(1);
-      // console.log('blocks', blocks)
-      this.insertBlock(pageUuid, memos, true)
-      // await logseq.Editor.updateBlock(pagePropBlock.uuid, pagePropBlockString);
+      if (!pageUuid) {
+        pagePropBlock = await logseq.Editor.insertBlock(pageBlocksTree[0].uuid, pagePropBlockString, { isPageBlock: false });
+        console.log("pagePropBlock", pagePropBlock);
+        pageUuid = pagePropBlock.uuid
+      }
+      this.insertBlock(pageUuid, memos, false)
     },
     async insertBlock(uuid, memos, sibling) {
-      const regex = /<ol>(<ol>.*?<\/ol>|.)*?<\/ol>|<ul>(<ul>.*?<\/ul>|.)*?<\/ul>/g;
       for (const memo of memos) {
         let { content, memo_url, updated_at, slug } = memo;
-        if (content.indexOf('<ol>') !== -1 || content.indexOf('<ul>') !== -1) {
-          let $ = cheerio.load(content);
-          let list_content = $('li').map(function (i, el) {
+
+        let $ = cheerio.load(content);
+        if (content.indexOf('<ol>') !== -1) {
+          $('ol').each(function (i, el) {
             // this === el
-            return `${i + 1}. ${$(this).text()}`;
-          }).get().join('\n');
-          content = content.replace(regex, list_content)
-          console.log('content', content)
+            $(this).children().each(function (j, ele) {
+              let str = j === 0 ? `\n${j + 1}. ${$(this).text()}\n` : `${j + 1}. ${$(this).text()}\n`
+              console.log('str', str)
+              $(this).html(str)
+            })
+          })
         }
+        if (content.indexOf('<ul>') !== -1) {
+          $('ul').each(function (i, el) {
+            // this === el
+            $(this).children().each(function (j, ele) {
+              let str = j === 0 ? `\n* ${$(this).text()}\n` : `* ${$(this).text()}\n`
+              console.log('str', str)
+              $(this).html(str)
+            })
+          })
+        }
+        content = $.text()
+        console.log('content', content)
         if (content.indexOf('<p>') !== -1) {
           content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
           console.log('remove P', content)
         }
-        const n_content = `${content} [link](${memo_url})\n:PROPERTIES:\nmemo_url:: ${memo_url}\nfid::${slug}\nupdated::${updated_at}\n:END:`;
-        // const { parent, after } = n;
-        // const source = blockMap.get(parent ?? after);
-        const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false });
+        content = content.replace(/\n$/, '')
+        const n_content = `${content}\n#+memo_url:${memo_url}\n#+flomo_id:${slug}\n#+updated:${updated_at}`;
+        const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
         // add a blank block
-        await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false });
-        // blockMap.set(hid, block);
+        await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false, before: false });
         console.log('block', block)
         if (memo.backlinked_count) {
           const backlinkeds = await this.getBacklinkeds(memo.slug)
           console.log('backlinkeds', backlinkeds)
-          this.insertBlock(block.uuid, backlinkeds, false)
+          const rows = this.handleRows(backlinkeds)
+          this.insertBlock(block.uuid, rows, false)
         }
       }
     },
