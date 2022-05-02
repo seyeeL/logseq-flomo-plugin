@@ -68,11 +68,13 @@ export default defineComponent({
       server: props.server,
     });
     async function refresh() {
-      const {code ,stat} = await loadStatFromFlomo(logseqSettings);
+      const {code ,stat, message} = await loadStatFromFlomo(logseqSettings);
       if (code === 0) {
         const totalCount = stat.memo_count;
         logseq.updateSettings({ totalCount });
         content.emit('changeTotalCount', totalCount);
+      } else {
+        logseq.App.showMsg(`${message}，请检查参数`, 'error');
       }
     }
     const saveUserId = () => {
