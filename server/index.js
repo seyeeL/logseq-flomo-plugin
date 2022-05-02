@@ -20,6 +20,7 @@ function onProxyReq(proxyReq, req, res) {
   const cookie = req.headers['fuck_cookie'];
   delete req.headers['fuck_cookie']
   console.log('onProxyReq[cookie]', cookie)
+  console.log('x_xsrf_token',req.headers['x_xsrf_token'] )
   if (!cookie) {
     console.log('Error: Cookie is undefined')
     return;
