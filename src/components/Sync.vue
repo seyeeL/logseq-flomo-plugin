@@ -127,8 +127,8 @@ export default defineComponent({
       await insertBlock(pageUuid, memos, false)
     }
     async function insertBlock(uuid, memos, sibling) {
-      for (const memo of memos) {
-        let { content, memo_url, updated_at, slug } = memo;
+      for (const item of memos) {
+        let { content, memo_url, updated_at, slug, backlinked_count } = item;
 
         let $ = cheerio.load(content);
         if (content.indexOf('<ol>') !== -1) {
@@ -163,9 +163,10 @@ export default defineComponent({
         // add a blank block
         await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false, before: false });
         console.log('block', block)
-        if (memo.backlinked_count) {
+        if (backlinked_count) {
+          console.log('处理反链', item);
           const {cookie, token, server} = syncData;
-          const {memo} = await getBacklinkedsFromFlomo({slug: memo.slug, cookie, token, server})
+          const {memo} = await getBacklinkedsFromFlomo({slug, cookie, token, server})
           if (memo?.backlinkeds?.length > 0) {
             const backlinkeds = memo.backlinkeds
             console.log('backlinkeds', backlinkeds)
