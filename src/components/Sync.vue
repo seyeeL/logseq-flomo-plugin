@@ -110,15 +110,17 @@ export default defineComponent({
     async function loadPageNotes(pageName, memos, puuid) {
       if (!pageName || !memos) return;
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown 
-      const pagePropBlockString = `[[flomo]]\n#+flomo_tag:${pageName}`; // org
+      const pagePropBlockString = `[[flomo]]\n#+flomo_tag: ${pageName}`; // org
       // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag:${pageName}\n:END:`; // both org md 
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock
       let pageUuid
       if (pageBlocksTree.length === 0) {
-        pagePropBlock = await logseq.Editor.insertBlock(puuid, pagePropBlockString, { isPageBlock: false });
-        console.log("pagePropBlock", pageBlocksTree);
+        pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
+        // pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
+        console.log("pagePropBlock", pagePropBlock);
+        pageUuid = pagePropBlock.uuid
       } else {
         for (let i = 0; i < pageBlocksTree.length; i++) {
           if (pageBlocksTree[i].content.indexOf('flomo_tag') !== -1) {
@@ -167,7 +169,7 @@ export default defineComponent({
         console.log('content', content)
         content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
-        const n_content = `${content}\n#+memo_url:${memo_url}\n#+flomo_id:${slug}\n#+updated:${updated_at}`; // org
+        const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url:${memo_url}\n:flomo_id:${slug}\n:updated:${updated_at}\n:END:`; // both org md 
         const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
         // add a blank block
