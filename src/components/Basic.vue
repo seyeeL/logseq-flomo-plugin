@@ -1,6 +1,6 @@
 <template>
-  <h2>步骤1：基本设置</h2>
-  <a-row>
+  <h2>STEP 1：基本设置</h2>
+  <!-- <a-row>
     <a-col :span="18"><a-input v-model:value="userId" placeholder="Key in your Flomo userId" /></a-col>
     <a-col :span="6"> <a-button type="link" @click="saveUserId">Save userId</a-button></a-col>
   </a-row>
@@ -26,12 +26,26 @@
       </div>
     </a-col>
     <a-col :span="6"> <a-button type="link" @click="refresh">Refresh</a-button></a-col>
-  </a-row>
+  </a-row> -->
+  <a-form :model="logseqSettings" name="basic" :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }">
+    <a-form-item label="userId" name="userId" :rules="[{ required: true, message: 'Please input your userId!' }]">
+      <a-input v-model:value="userId" />
+    </a-form-item>
+    <a-form-item label="cookie" name="cookie" :rules="[{ required: true, message: 'Please input your cookie!' }]">
+      <a-input v-model:value="cookie" />
+    </a-form-item>
+    <a-form-item label="token" name="token" :rules="[{ required: true, message: 'Please input your token!' }]">
+      <a-input v-model:value="token" />
+    </a-form-item>
+    <a-form-item label="server" name="server" :rules="[{ required: true, message: 'Please input your server!' }]">
+      <a-input v-model:value="server" />
+    </a-form-item>
+  </a-form>
 </template>
 
 <script>
 import { defineComponent, ref, toRef, toRefs, reactive } from 'vue';
-import {loadStatFromFlomo} from '../utils';
+import { loadStatFromFlomo } from '../utils';
 export default defineComponent({
   props: {
     userId: {
@@ -68,7 +82,7 @@ export default defineComponent({
       server: props.server,
     });
     async function refresh() {
-      const {code ,stat, message} = await loadStatFromFlomo(logseqSettings);
+      const { code, stat, message } = await loadStatFromFlomo(logseqSettings);
       if (code === 0) {
         const totalCount = stat.memo_count;
         logseq.updateSettings({ totalCount });

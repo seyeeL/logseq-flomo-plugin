@@ -1,8 +1,9 @@
 <template>
-  <h2>步骤3：同步！</h2>
+  <h2 style="float:left;margin-right:70px">STEP 3：保存设置并同步</h2>
   <div>
-    <a-button type="primary" :loading="progressPercentage > 0" @click="sync">Sync Now</a-button>
+    <a-button type="primary" :loading="progressPercentage > 0" @click="sync">Save and Sync</a-button>
   </div>
+
   <a-progress v-if="progressPercentage > 0" :percent="progressPercentage" />
 </template>
 
