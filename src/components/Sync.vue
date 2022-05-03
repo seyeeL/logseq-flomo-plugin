@@ -64,7 +64,6 @@ export default defineComponent({
         const { cookie, token, server } = syncData;
         const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
-
           const rows = memos.map((memo) => ({
             ...memo,
             memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
@@ -107,11 +106,11 @@ export default defineComponent({
         syncData.updating = false;
       }
     }
-    async function loadPageNotes(pageName, memos, puuid) {
+    async function loadPageNotes(pageName, memos) {
       if (!pageName || !memos) return;
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown 
       const pagePropBlockString = `[[flomo]]\n#+flomo_tag: ${pageName}`; // org
-      // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag:${pageName}\n:END:`; // both org md 
+      // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md 
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock
@@ -138,8 +137,28 @@ export default defineComponent({
       await insertBlock(pageUuid, memos, false)
     }
     async function insertBlock(uuid, memos, sibling) {
+      const getBlockTree = await logseq.Editor.getBlock(uuid, { includeChildren: true });
+      console.log("getBlockTree", getBlockTree);
+      let oldTree = getBlockTree?.children
       for (const item of memos) {
-        let { content, memo_url, updated_at, slug, backlinked_count } = item;
+        let oldUuid
+        let { content, memo_url, updated_at, slug, backlinked_count, linked_count, tags } = item;
+        console.log("updated_at", updated_at, slug);
+        if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
+        if (oldTree.length) {
+          for (let i = 0; i < oldTree.length; i++) {
+            if (oldTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
+              console.log("历史节点已存在uuid");
+              if (oldTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
+                console.log("且时间匹配");
+                break
+              }
+              oldUuid = oldTree[i].uuid //时间不匹配
+            }
+          }
+          if (!oldUuid) continue
+          console.log("continue", oldUuid);
+        }
         if (content.indexOf('<p>') !== -1) {
           content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
           console.log('remove P', content)
@@ -170,11 +189,18 @@ export default defineComponent({
         content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+updated: ${updated_at}`; // org
-        // const n_content = `${content}\n:PROPERTIES:\n:memo_url:${memo_url}\n:flomo_id:${slug}\n:updated:${updated_at}\n:END:`; // both org md 
-        const block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
-        // add a blank block
-        await logseq.Editor.insertBlock(block.uuid, '', { sibling: true, isPageBlock: false, before: false });
-        console.log('block', block)
+        // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md 
+        let n_block_id
+        if (oldUuid) {
+          await logseq.Editor.updateBlock(oldUuid, n_content);
+          n_block_id = oldUuid
+        } else {
+          let n_block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
+          n_block_id = n_block.uuid
+          // add a blank block
+          await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
+        }
+        console.log('n_block_id', n_block_id)
         if (backlinked_count) {
           console.log('处理反链', item);
           const { cookie, token, server } = syncData;
@@ -187,7 +213,7 @@ export default defineComponent({
               memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
             })
             );
-            await insertBlock(block.uuid, rows, false)
+            await insertBlock(n_block_id, rows, false)
           }
         }
       }
