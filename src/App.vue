@@ -1,11 +1,13 @@
 <template>
   <a-modal v-model:visible="visible" :footer="null" :closable="true">
     <template #title>
-      <span>Settings</span>
+      <span>Sync Settings</span>
     </template>
-    <Basic :userId="userId" :cookie="cookie" :token="token" :server="server" :totalCount="totalCount" :updatedCount="updatedCount" @changeTotalCount="changeTotalCount"></Basic>
-    <Customise></Customise>
-    <Sync :cookie="cookie" :token="token" :server="server" :totalCount="totalCount"></Sync>
+    <Basic :userId="userId" :cookie="cookie" :token="token" :server="server"></Basic>
+    <a-divider />
+    <Customise :title="title" :max-count="maxCount"></Customise>
+    <a-divider />
+    <Sync :cookie="cookie" :token="token" :server="server"></Sync>
   </a-modal>
 </template>
 
@@ -28,14 +30,12 @@ export default {
   data() {
     return {
       visible: false,
-      percent: 0,
       maxCount: 0,
+      title: '',
       cookie: "",
       token: "",
       userId: "",
       server: "",
-      totalCount: 0,
-      updatedCount: 0,
     };
   },
   watch: {
@@ -53,10 +53,10 @@ export default {
         console.log('dev', s);
         this.visible = true
         this.maxCount = s.maxCount;
+        this.title = s.title;
         this.cookie = s.cookie;
         this.token = s.token;
         this.userId = s.userId;
-        this.totalCount = s.totalCount;
       });
     }
 
@@ -65,7 +65,8 @@ export default {
       // init
       const s = logseq.settings;
       console.log('prod', s);
-      this.maxCount = s.maxCount;
+      this.maxCount = s.maxCount || 0;
+      this.title = s.title || 'flomo';
       this.cookie = s.cookie;
       this.token = s.token;
       this.userId = s.userId;
@@ -83,13 +84,6 @@ export default {
   methods: {
     hideMainUI() {
       logseq.hideMainUI();
-    },
-    changeTotalCount(value) {
-      console.log('changeTotalCount', this.totalCount)
-      const updatedCount = value - this.totalCount
-      console.log('updatedCount', updatedCount)
-      this.totalCount = value;
-      this.updatedCount = updatedCount;
     },
   },
 };

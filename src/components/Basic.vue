@@ -1,52 +1,62 @@
 <template>
-  <h2>STEP 1：基本设置</h2>
-  <!-- <a-row>
-    <a-col :span="18"><a-input v-model:value="userId" placeholder="Key in your Flomo userId" /></a-col>
-    <a-col :span="6"> <a-button type="link" @click="saveUserId">Save userId</a-button></a-col>
+  <h3>STEP 1：基本设置</h3>
+  <p>因flomo服务器设置以及安全原因，目前只能通过http-proxy的方法来获取flomo中的数据。userId cookie token 请参照该链接方式获取。Proxy Server为自建服务器地址，请填入代理服务器的地址。确认基本设置项无误后，点击刷新按钮，获取到memos的数量即为设置成功。</p>
+  <a-row class="basic-row">
+    <a-col :span="6"><div class="item-label"><label>userId</label></div></a-col>
+    <a-col :span="16"><a-input v-model:value="userId" placeholder="Key in your Flomo userId" @blur="saveUserId" /></a-col>
   </a-row>
-  <a-row>
-    <a-col :span="18"><a-input v-model:value="cookie" placeholder="Key in your Flomo cookie" /></a-col>
-    <a-col :span="6"> <a-button type="link" @click="saveCookie">Save cookie</a-button></a-col>
+  <a-row class="basic-row">
+    <a-col :span="6"><div class="item-label"><label>cookie</label></div></a-col>
+    <a-col :span="16"><a-input v-model:value="cookie" placeholder="Key in your Flomo cookie" @blur="saveCookie" /></a-col>
   </a-row>
-  <a-row>
-    <a-col :span="18"><a-input v-model:value="token" placeholder="Key in your Flomo token" /></a-col>
-    <a-col :span="6"> <a-button type="link" @click="saveToken">Save token</a-button></a-col>
+  <a-row class="basic-row">
+    <a-col :span="6"><div class="item-label"><label>token</label></div></a-col>
+    <a-col :span="16"><a-input v-model:value="token" placeholder="Key in your Flomo token" @blur="saveToken" /></a-col>
   </a-row>
-  <a-row>
-    <a-col :span="18"><a-input v-model:value="server" placeholder="Proxy Server" /></a-col>
-    <a-col :span="6"> <a-button type="link" @click="saveServer">Save Server</a-button></a-col>
+  <a-row class="basic-row">
+    <a-col :span="6"><div class="item-label"><label>Proxy Server</label></div></a-col>
+    <a-col :span="16"><a-input v-model:value="server" placeholder="Proxy Server" @blur="saveServer" /></a-col>
   </a-row>
-  <a-row>
-    <a-col :span="18">
-      <div>
-        <a-badge :count="totalCount" :overflowCount="99999" :number-style="{ backgroundColor: '#52c41a' }" /> 当前memos数量
-      </div>
-      <div>
-        <a-badge :count="updatedCount" :overflowCount="99999" /> 需要同步的memos数量
-      </div>
+  <a-row class="basic-row">
+    <a-col :span="8"><div class="item-label"><label>Flomo中的memos数量</label></div></a-col>
+    <a-col :span="16">
+      {{totalCount}}
+      <a-button type="link" @click="refresh">刷新</a-button>
     </a-col>
-    <a-col :span="6"> <a-button type="link" @click="refresh">Refresh</a-button></a-col>
-  </a-row> -->
-  <a-form :model="logseqSettings" name="basic" :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }">
-    <a-form-item label="userId" name="userId" :rules="[{ required: true, message: 'Please input your userId!' }]">
-      <a-input v-model:value="userId" />
-    </a-form-item>
-    <a-form-item label="cookie" name="cookie" :rules="[{ required: true, message: 'Please input your cookie!' }]">
-      <a-input v-model:value="cookie" />
-    </a-form-item>
-    <a-form-item label="token" name="token" :rules="[{ required: true, message: 'Please input your token!' }]">
-      <a-input v-model:value="token" />
-    </a-form-item>
-    <a-form-item label="server" name="server" :rules="[{ required: true, message: 'Please input your server!' }]">
-      <a-input v-model:value="server" />
-    </a-form-item>
-  </a-form>
+  </a-row>
 </template>
+<style>
+.item-label {
+  display: inline-block;
+  flex-grow: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: middle;
+}
+.item-label > label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: 32px;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+}
+.basic-row {
+  margin-bottom: 20px;
+}
+</style>
 
 <script>
 import { defineComponent, ref, toRef, toRefs, reactive } from 'vue';
+import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+
 import { loadStatFromFlomo } from '../utils';
 export default defineComponent({
+  components: {
+    ExclamationCircleOutlined,
+  },
   props: {
     userId: {
       type: String,
@@ -64,15 +74,6 @@ export default defineComponent({
       type: String,
       default: '',
     },
-    totalCount: {
-      type: Number,
-      default: 0,
-    },
-    updatedCount: {
-      type: Number,
-      default: 0,
-    },
-
   },
   setup(props, content) {
     const logseqSettings = reactive({
@@ -80,32 +81,29 @@ export default defineComponent({
       cookie: props.cookie,
       token: props.token,
       server: props.server,
+      totalCount: ref(0),
     });
     async function refresh() {
       const { code, stat, message } = await loadStatFromFlomo(logseqSettings);
       if (code === 0) {
-        const totalCount = stat.memo_count;
-        logseq.updateSettings({ totalCount });
-        content.emit('changeTotalCount', totalCount);
+        logseqSettings.totalCount = stat.memo_count;
+        logseq.App.showMsg("连接服务器成功", 'success');
       } else {
         logseq.App.showMsg(`${message}，请检查参数`, 'error');
       }
     }
     const saveUserId = () => {
+      console.log('saveUserId', logseqSettings.userId)
       logseq.updateSettings({ userId: logseqSettings.userId });
-      logseq.App.showMsg('UserId saved!', 'success');
     };
     const saveCookie = () => {
       logseq.updateSettings({ cookie: logseqSettings.cookie });
-      logseq.App.showMsg('Cookie saved!', 'success');
     };
     const saveToken = () => {
       logseq.updateSettings({ token: logseqSettings.token });
-      logseq.App.showMsg('Token saved!', 'success');
     };
     const saveServer = () => {
       logseq.updateSettings({ server: logseqSettings.server });
-      logseq.App.showMsg('Server saved!', 'success');
     };
     const logseqSettingsRef = toRefs(logseqSettings);
     return {

@@ -1,11 +1,17 @@
 <template>
-  <h2 style="float:left;margin-right:70px">STEP 3：保存设置并同步</h2>
+  <h3>STEP 3：同步</h3>
+  <p>若flomo中的数据量过大，同步将会耗时较长，请耐心等待同步完成。</p>
   <div>
-    <a-button type="primary" :loading="progressPercentage > 0" @click="sync">Save and Sync</a-button>
+    <a-button type="primary" :loading="progressPercentage > 0" @click="sync">同步</a-button>
   </div>
-
-  <a-progress v-if="progressPercentage > 0" :percent="progressPercentage" />
+  <a-progress :percent="progressPercentage" />
 </template>
+
+<style>
+.item-block {
+  margin-bottom: 10px;
+}
+</style>
 
 <script>
 import { defineComponent, ref, toRefs, reactive } from 'vue';
@@ -46,9 +52,6 @@ export default defineComponent({
         await handleByTags(tags);
         console.log('sync end')
         logseq.App.showMsg('同步成功!', 'success');
-        setTimeout(() => {
-          syncData.progressPercentage = 0;
-        }, 500);
       }
     }
     async function handleByTags(tags) {
@@ -110,9 +113,9 @@ export default defineComponent({
     }
     async function loadPageNotes(pageName, memos) {
       if (!pageName || !memos) return;
-      // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown 
+      // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown
       const pagePropBlockString = `[[flomo]]\n#+flomo_tag: ${pageName}`; // org
-      // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md 
+      // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log("pageBlocksTree", pageBlocksTree);
       let pagePropBlock
@@ -191,7 +194,7 @@ export default defineComponent({
         content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+updated: ${updated_at}`; // org
-        // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md 
+        // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
         let n_block_id
         if (oldUuid) {
           await logseq.Editor.updateBlock(oldUuid, n_content);
