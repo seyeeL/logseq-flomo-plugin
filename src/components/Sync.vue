@@ -164,7 +164,7 @@ export default defineComponent({
         console.log(`memos item`, item);
         let oldUuid
         let hasOld = false
-        let { content, memo_url, updated_at, slug, backlinked_count, linked_count, tags } = item;
+        let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
         if (oldTree.length) {
           before = true
@@ -172,7 +172,7 @@ export default defineComponent({
           for (let i = 0; i < oldTree.length; i++) {
             if (oldTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
               hasOld = true
-              console.log(`历史节点已存在uuid ${slug}  ${oldTree[i].content} `, oldTree[i].content.indexOf(`#+flomo_id: ${slug}`));
+              console.log(`历史节点已存在uuid  ${oldTree[i].content} `);
               if (oldTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
                 console.log("且时间匹配");
                 if (backlinked_count) {
@@ -217,7 +217,7 @@ export default defineComponent({
         console.log('content', content)
         content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
-        const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+updated: ${updated_at}`; // org
+        const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
         let n_block_id
         if (oldUuid) {
