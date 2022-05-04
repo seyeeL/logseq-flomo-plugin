@@ -1,6 +1,6 @@
 <template>
   <h3>STEP 3：同步</h3>
-  <p>若flomo中的数据量过大，同步将会耗时较长，请耐心等待同步完成。</p>
+  <p>若 flomo 中的数据量过大，同步将会耗时较长，请耐心等待同步完成。</p>
   <div>
     <a-button type="primary" :loading="progressPercentage > 0" @click="sync">同步</a-button>
   </div>
@@ -117,56 +117,61 @@ export default defineComponent({
       const pagePropBlockString = `[[flomo]]\n#+flomo_tag: ${pageName}`; // org
       // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
-      console.log("pageBlocksTree", pageBlocksTree);
+      console.log(`pageBlocksTree ${pageName}`, pageBlocksTree);
       let pagePropBlock
       let pageUuid
       if (pageBlocksTree.length === 0) {
         pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
         // pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
-        console.log("pagePropBlock", pagePropBlock);
+        console.log(`pagePropBlock ${pageName}`, pagePropBlock);
         pageUuid = pagePropBlock.uuid
       } else {
         for (let i = 0; i < pageBlocksTree.length; i++) {
           if (pageBlocksTree[i].content.indexOf('flomo_tag') !== -1) {
             pageUuid = pageBlocksTree[i].uuid
-            console.log("pageUuid", pageUuid);
             break
           }
         }
       }
       if (!pageUuid) {
-        pagePropBlock = await logseq.Editor.insertBlock(pageBlocksTree[0].uuid, pagePropBlockString, { isPageBlock: false });
-        console.log("pagePropBlock", pagePropBlock);
+        pagePropBlock = await logseq.Editor.insertBlock(pageBlocksTree[0].uuid, pagePropBlockString, { isPageBlock: false, sibling: true });
         pageUuid = pagePropBlock.uuid
       }
       await insertBlock(pageUuid, memos, false)
     }
     async function insertBlock(uuid, memos, sibling) {
       const getBlockTree = await logseq.Editor.getBlock(uuid, { includeChildren: true });
-      console.log("getBlockTree", getBlockTree);
+      console.log(`insertBlock start: getBlockTree`, getBlockTree);
       let oldTree = getBlockTree?.children
       for (const item of memos) {
+        console.log(`memos item`, item);
         let oldUuid
+        let hasOld = false
         let { content, memo_url, updated_at, slug, backlinked_count, linked_count, tags } = item;
-        console.log("updated_at", updated_at, slug);
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
         if (oldTree.length) {
           for (let i = 0; i < oldTree.length; i++) {
             if (oldTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
-              console.log("历史节点已存在uuid");
+              hasOld = true
+              console.log(`历史节点已存在uuid ${slug}  ${oldTree[i].content} `, oldTree[i].content.indexOf(`#+flomo_id: ${slug}`));
               if (oldTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
                 console.log("且时间匹配");
+                if (backlinked_count) {
+                  await handleBacklinkedsFromFlomo(slug, oldTree[i].uuid)
+                }
                 break
               }
               oldUuid = oldTree[i].uuid //时间不匹配
+              break
             }
           }
-          if (!oldUuid) continue
-          console.log("continue", oldUuid);
         }
+        if (hasOld) continue
         if (content.indexOf('<p>') !== -1) {
           content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
-          console.log('remove P', content)
+        }
+        if (content.indexOf('<strong>') !== -1) {
+          content = content.replaceAll('<strong>', '**').replaceAll('</strong>', '**')
         }
         let $ = cheerio.load(content);
         if (content.indexOf('<ol>') !== -1) {
@@ -207,22 +212,26 @@ export default defineComponent({
         }
         console.log('n_block_id', n_block_id)
         if (backlinked_count) {
-          console.log('处理反链', item);
-          const { cookie, token, server } = syncData;
-          const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
-          if (memo?.backlinkeds?.length > 0) {
-            const backlinkeds = memo.backlinkeds
-            console.log('backlinkeds', backlinkeds)
-            const rows = backlinkeds.map((memo) => ({
-              ...memo,
-              memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-            })
-            );
-            await insertBlock(n_block_id, rows, false)
-          }
+          await handleBacklinkedsFromFlomo(slug, n_block_id)
         }
       }
     }
+    async function handleBacklinkedsFromFlomo(slug, n_block_id) {
+      console.log('handleBacklinkedsFromFlomo');
+      const { cookie, token, server } = syncData;
+      const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
+      if (memo?.backlinkeds?.length > 0) {
+        const backlinkeds = memo.backlinkeds
+        console.log('backlinkeds', backlinkeds)
+        const rows = backlinkeds.map((memo) => ({
+          ...memo,
+          memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+        })
+        );
+        await insertBlock(n_block_id, rows, false)
+      }
+    }
+
     return {
       sync,
       ...dataRef,

@@ -1,24 +1,43 @@
 <template>
   <h3>STEP 1：基本设置</h3>
-  <p>因flomo服务器设置以及安全原因，目前只能通过http-proxy的方法来获取flomo中的数据。userId cookie token 请参照该链接方式获取。Proxy Server为自建服务器地址，请填入代理服务器的地址。确认基本设置项无误后，点击刷新按钮，获取到memos的数量即为设置成功。</p>
+  <p>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。userId cookie token 请参照该链接方式获取。<br>Proxy
+    Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</p>
   <a-row class="basic-row">
-    <a-col :span="6"><div class="item-label"><label>userId</label></div></a-col>
-    <a-col :span="16"><a-input v-model:value="userId" placeholder="Key in your Flomo userId" @blur="saveUserId" /></a-col>
+    <a-col :span="6">
+      <div class="item-label"><label>userId</label></div>
+    </a-col>
+    <a-col :span="16">
+      <a-input v-model:value="userId" placeholder="Key in your flomo userId" @blur="saveUserId" />
+    </a-col>
   </a-row>
   <a-row class="basic-row">
-    <a-col :span="6"><div class="item-label"><label>cookie</label></div></a-col>
-    <a-col :span="16"><a-input v-model:value="cookie" placeholder="Key in your Flomo cookie" @blur="saveCookie" /></a-col>
+    <a-col :span="6">
+      <div class="item-label"><label>cookie</label></div>
+    </a-col>
+    <a-col :span="16">
+      <a-input v-model:value="cookie" placeholder="Key in your flomo cookie" @blur="saveCookie" />
+    </a-col>
   </a-row>
   <a-row class="basic-row">
-    <a-col :span="6"><div class="item-label"><label>token</label></div></a-col>
-    <a-col :span="16"><a-input v-model:value="token" placeholder="Key in your Flomo token" @blur="saveToken" /></a-col>
+    <a-col :span="6">
+      <div class="item-label"><label>token</label></div>
+    </a-col>
+    <a-col :span="16">
+      <a-input v-model:value="token" placeholder="Key in your flomo token" @blur="saveToken" />
+    </a-col>
   </a-row>
   <a-row class="basic-row">
-    <a-col :span="6"><div class="item-label"><label>Proxy Server</label></div></a-col>
-    <a-col :span="16"><a-input v-model:value="server" placeholder="Proxy Server" @blur="saveServer" /></a-col>
+    <a-col :span="6">
+      <div class="item-label"><label>Proxy Server</label></div>
+    </a-col>
+    <a-col :span="16">
+      <a-input v-model:value="server" placeholder="Proxy Server" @blur="saveServer" />
+    </a-col>
   </a-row>
   <a-row class="basic-row">
-    <a-col :span="8"><div class="item-label"><label>Flomo中的memos数量</label></div></a-col>
+    <a-col :span="8">
+      <div class="item-label"><label>flomo中的memos数量</label></div>
+    </a-col>
     <a-col :span="16">
       {{totalCount}}
       <a-button type="link" @click="refresh">刷新</a-button>
