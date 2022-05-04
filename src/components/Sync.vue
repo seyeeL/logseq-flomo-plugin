@@ -76,9 +76,9 @@ export default defineComponent({
           continue;
         }
         // 调试用
-        if (i > 0) {
-          return
-        }
+        // if (i > 0) {
+        //   return
+        // }
         const { cookie, token, server } = syncData;
         const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
@@ -164,7 +164,7 @@ export default defineComponent({
         console.log(`memos item`, item);
         let oldUuid
         let hasOld = false
-        let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags } = item;
+        let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
         if (oldTree.length) {
           before = true
@@ -216,6 +216,7 @@ export default defineComponent({
         content = $.text()
         console.log('content', content)
         content = content.replace(/\n$/, '')
+
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
@@ -231,6 +232,14 @@ export default defineComponent({
           await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
         }
         console.log('n_block_id', n_block_id)
+        // let imgContent = ''
+        // if (files?.length) {
+        //   for (let i = 0; i < files.length; i++) {
+        //     imgContent = `${imgContent}\n![image](${files[i].url})`
+        //   }
+        //   imgContent = `${imgContent}\n#+isImg: true`
+        //   await logseq.Editor.insertBlock(n_block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
+        // }
         if (backlinked_count) {
           await handleBacklinkedsFromFlomo(slug, n_block_id)
         }
