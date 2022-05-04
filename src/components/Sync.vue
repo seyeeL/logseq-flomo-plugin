@@ -2,7 +2,7 @@
   <h3>STEP 3：同步</h3>
   <p>若 flomo 中的数据量过大，同步将会耗时较长，请耐心等待同步完成。</p>
   <div>
-    <a-button type="primary" :loading="progressPercentage > 0" @click="sync">同步</a-button>
+    <a-button type="primary" :loading="syncing" @click="sync">同步</a-button>
   </div>
   <a-progress :percent="progressPercentage" />
 </template>
@@ -41,17 +41,25 @@ export default defineComponent({
       server: props.server,
       progressPercentage: ref(0),
       updating: ref(false),
+      syncing: ref(false),
     });
     const dataRef = toRefs(syncData);
     async function sync() {
       console.log('sync start')
+      syncData.syncing = true;
       const { cookie, token, server } = syncData;
-      const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
-      if (tags.length > 0) {
-        console.log('tags', tags)
-        await handleByTags(tags);
-        console.log('sync end')
-        logseq.App.showMsg('同步成功!', 'success');
+      try {
+        const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
+        if (tags.length > 0) {
+          console.log('tags', tags)
+          await handleByTags(tags);
+          console.log('sync end')
+          logseq.App.showMsg('同步成功', 'success');
+          syncData.syncing = false;
+        }
+      } catch (e) {
+        syncData.syncing = false;
+        logseq.App.showMsg('连接服务器出错，请检查配置', 'error');
       }
     }
     async function handleByTags(tags) {

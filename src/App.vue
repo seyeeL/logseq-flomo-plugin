@@ -1,5 +1,5 @@
 <template>
-  <a-modal v-model:visible="visible" :footer="null" :closable="true">
+  <a-modal v-model:visible="visible" :footer="null" :closable="true" destroyOnClose>
     <template #title>
       <span>Sync Settings</span>
     </template>

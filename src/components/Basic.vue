@@ -2,13 +2,13 @@
   <h3>STEP 1：基本设置</h3>
   <a-tooltip placement="bottomRight">
     <template #title>
-      <span>prompt text</span>
+      <span>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参照该链接方式获取。<br>Proxy
+    Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
     </template>
     <question-circle-outlined />
   </a-tooltip>
 
-  <p>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。userId cookie token 请参照该链接方式获取。<br>Proxy
-    Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</p>
+  <p></p>
   <a-row class="basic-row">
     <a-col :span="6">
       <div class="item-label"><label>userId</label></div>
@@ -115,12 +115,16 @@ export default defineComponent({
       totalCount: ref(0),
     });
     async function refresh() {
-      const { code, stat, message } = await loadStatFromFlomo(logseqSettings);
-      if (code === 0) {
-        logseqSettings.totalCount = stat.memo_count;
-        logseq.App.showMsg("连接服务器成功", 'success');
-      } else {
-        logseq.App.showMsg(`${message}，请检查参数`, 'error');
+      try {
+        const { code, stat, message } = await loadStatFromFlomo(logseqSettings);
+        if (code === 0) {
+          logseqSettings.totalCount = stat.memo_count;
+          logseq.App.showMsg("连接服务器成功", 'success');
+        } else {
+          logseq.App.showMsg(`${message}，请检查配置`, 'error');
+        }
+      } catch (e) {
+        logseq.App.showMsg('连接服务器出错，请检查配置', 'error');
       }
     }
     const saveUserId = () => {
