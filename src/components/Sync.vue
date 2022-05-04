@@ -143,6 +143,8 @@ export default defineComponent({
       const getBlockTree = await logseq.Editor.getBlock(uuid, { includeChildren: true });
       console.log(`insertBlock start: getBlockTree`, getBlockTree);
       let oldTree = getBlockTree?.children
+      let before = false
+      let n_uuid = uuid
       for (const item of memos) {
         console.log(`memos item`, item);
         let oldUuid
@@ -150,6 +152,8 @@ export default defineComponent({
         let { content, memo_url, updated_at, slug, backlinked_count, linked_count, tags } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
         if (oldTree.length) {
+          before = true
+          n_uuid = oldTree[0].uuid
           for (let i = 0; i < oldTree.length; i++) {
             if (oldTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
               hasOld = true
@@ -166,7 +170,7 @@ export default defineComponent({
             }
           }
         }
-        if (hasOld) continue
+        if (hasOld && !oldUuid) continue
         if (content.indexOf('<p>') !== -1) {
           content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
         }
@@ -205,7 +209,8 @@ export default defineComponent({
           await logseq.Editor.updateBlock(oldUuid, n_content);
           n_block_id = oldUuid
         } else {
-          let n_block = await logseq.Editor.insertBlock(uuid, n_content, { sibling, isPageBlock: false, before: false });
+          // console.log('sibling', sibling);
+          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
           await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
