@@ -1,5 +1,12 @@
 <template>
   <h3>STEP 1：基本设置</h3>
+  <a-tooltip placement="bottomRight">
+    <template #title>
+      <span>prompt text</span>
+    </template>
+    <question-circle-outlined />
+  </a-tooltip>
+
   <p>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。userId cookie token 请参照该链接方式获取。<br>Proxy
     Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</p>
   <a-row class="basic-row">
@@ -65,16 +72,21 @@
 .basic-row {
   margin-bottom: 20px;
 }
+.anticon.anticon-question-circle {
+  position: absolute;
+  left: 167px;
+  top: 86px;
+}
 </style>
 
 <script>
 import { defineComponent, ref, toRef, toRefs, reactive } from 'vue';
-import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons-vue";
 
 import { loadStatFromFlomo } from '../utils';
 export default defineComponent({
   components: {
-    ExclamationCircleOutlined,
+    ExclamationCircleOutlined, QuestionCircleOutlined
   },
   props: {
     userId: {
