@@ -7,7 +7,7 @@
     <a-divider />
     <Customise :title="title" :max-count="maxCount"></Customise>
     <a-divider />
-    <Sync :cookie="cookie" :token="token" :server="server"></Sync>
+    <Sync :cookie="cookie" :token="token" :server="server" :title="title"></Sync>
   </a-modal>
 </template>
 

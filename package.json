@@ -2,7 +2,7 @@
   "name": "logseq-flomo-plugin",
   "version": "0.0.1",
   "main": "dist/index.html",
-  "author": "©Logseq",
+  "author": "Seyee and Stanley",
   "scripts": {
     "start": "vite",
     "dev": "vite",

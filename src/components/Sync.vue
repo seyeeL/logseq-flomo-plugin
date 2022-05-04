@@ -33,12 +33,17 @@ export default defineComponent({
       type: String,
       default: '',
     },
+    title: {
+      type: String,
+      default: 'flomo',
+    },
   },
   setup(props) {
     const syncData = reactive({
       cookie: props.cookie,
       token: props.token,
       server: props.server,
+      title: props.title,
       progressPercentage: ref(0),
       updating: ref(false),
       syncing: ref(false),
@@ -71,9 +76,9 @@ export default defineComponent({
           continue;
         }
         // 调试用
-        // if (i > 0) {
-        //   return
-        // }
+        if (i > 0) {
+          return
+        }
         const { cookie, token, server } = syncData;
         const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
@@ -121,8 +126,10 @@ export default defineComponent({
     }
     async function loadPageNotes(pageName, memos) {
       if (!pageName || !memos) return;
+      const { title } = syncData;
+      console.log(`title ${title}`);
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown
-      const pagePropBlockString = `[[flomo]]\n#+flomo_tag: ${pageName}`; // org
+      const pagePropBlockString = `[[${title}]]\n#+flomo_tag: ${pageName}`; // org
       // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log(`pageBlocksTree ${pageName}`, pageBlocksTree);
@@ -135,7 +142,7 @@ export default defineComponent({
         pageUuid = pagePropBlock.uuid
       } else {
         for (let i = 0; i < pageBlocksTree.length; i++) {
-          if (pageBlocksTree[i].content.indexOf('flomo_tag') !== -1) {
+          if (pageBlocksTree[i].content.indexOf(`[[${title}]]\n#+flomo_tag: ${pageName}`) !== -1) {
             pageUuid = pageBlocksTree[i].uuid
             break
           }

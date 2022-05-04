@@ -42,10 +42,9 @@ npm start
 1. open http://localhost:3000
 
 ## 常用问题(Q & A)
-
-* how
-   如何拿到 userId cookie token？
-   1. 在你的浏览器登陆 flomo 账号后，按 F12 打开浏览器控制台后再次刷新 flomo 的页面
-   2. 找到列表中为 tz=8:0 的接口，复制里面的 userId、cookie、x-xsrf-token 到 logseq 插件的弹窗
+###  How to get userId cookie token？
+如何拿到 userId cookie token？
+1. 在你的浏览器登陆 flomo 账号后，按 F12 打开浏览器控制台后再次刷新 flomo 的页面
+2. 找到列表中为 tz=8:0 的接口，复制里面的 userId、cookie、x-xsrf-token 到 logseq 插件的弹窗
 
 ![image](https://github.com/SeyeeL/logseq-flomo-plugin/blob/main/src/assets/getCookie.jpg)
