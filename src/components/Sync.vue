@@ -161,9 +161,9 @@ export default defineComponent({
       let before = false
       let n_sibling = sibling
       let n_uuid = uuid
-      let img_block_id
       for (const item of memos) {
         console.log(`memos item`, item);
+        let img_block_id
         let oldUuid
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
