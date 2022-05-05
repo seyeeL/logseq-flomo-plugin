@@ -159,7 +159,9 @@ export default defineComponent({
       console.log(`insertBlock start: getBlockTree`, getBlockTree);
       let oldTree = getBlockTree?.children
       let before = false
+      let n_sibling = sibling
       let n_uuid = uuid
+      let img_block_id
       for (const item of memos) {
         console.log(`memos item`, item);
         let oldUuid
@@ -175,8 +177,12 @@ export default defineComponent({
               console.log(`历史节点已存在uuid  ${oldTree[i].content} `);
               if (oldTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
                 console.log("且时间匹配");
+                if (files?.length) {
+                  n_sibling = true
+                  img_block_id = await handleImgsFromFlomo(files, oldTree[i].uuid)
+                }
                 if (backlinked_count) {
-                  await handleBacklinkedsFromFlomo(slug, oldTree[i].uuid)
+                  await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : oldTree[i].uuid, n_sibling)
                 }
                 break
               }
@@ -216,7 +222,6 @@ export default defineComponent({
         content = $.text()
         console.log('content', content)
         content = content.replace(/\n$/, '')
-
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
@@ -232,20 +237,35 @@ export default defineComponent({
           await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
         }
         console.log('n_block_id', n_block_id)
-        // let imgContent = ''
-        // if (files?.length) {
-        //   for (let i = 0; i < files.length; i++) {
-        //     imgContent = `${imgContent}\n![image](${files[i].url})`
-        //   }
-        //   imgContent = `${imgContent}\n#+isImg: true`
-        //   await logseq.Editor.insertBlock(n_block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
-        // }
+        if (files?.length) {
+          n_sibling = true
+          img_block_id = await handleImgsFromFlomo(files, n_block_id)
+        }
         if (backlinked_count) {
-          await handleBacklinkedsFromFlomo(slug, n_block_id)
+          await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : n_block_id, n_sibling)
         }
       }
     }
-    async function handleBacklinkedsFromFlomo(slug, n_block_id) {
+    async function handleImgsFromFlomo(files, n_block_id) {
+      let imgContent = ''
+      let block_id = n_block_id
+      const n_BlockTree = await logseq.Editor.getBlock(n_block_id, { includeChildren: true });
+      console.log('n_BlockTree', n_BlockTree)
+      for (let i = 0; i < files.length; i++) {
+        imgContent = `${imgContent}\n![image](${files[i].url})`
+      }
+      imgContent = `${imgContent}\n#+isImg: true`
+      if (n_BlockTree?.children.length === 0) {
+        return await logseq.Editor.insertBlock(block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
+      } else if (n_BlockTree?.children?.[0].content.indexOf(`#+isImg: true`) !== -1) {
+        await logseq.Editor.updateBlock(n_BlockTree.children[0].uuid, imgContent);
+        return n_BlockTree.children[0].uuid
+      } else {
+        block_id = n_BlockTree.children[0].uuid
+        return await logseq.Editor.insertBlock(block_id, imgContent, { sibling: true, isPageBlock: false, before: true });
+      }
+    }
+    async function handleBacklinkedsFromFlomo(slug, n_block_id, sibling) {
       console.log('handleBacklinkedsFromFlomo');
       const { cookie, token, server } = syncData;
       const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
@@ -257,15 +277,13 @@ export default defineComponent({
           memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
         })
         );
-        await insertBlock(n_block_id, rows, false)
+        await insertBlock(n_block_id, rows, sibling)
       }
     }
-
     return {
       sync,
       ...dataRef,
     };
   },
-
 });
 </script>
