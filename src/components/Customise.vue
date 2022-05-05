@@ -1,5 +1,6 @@
 <template>
-  <h3 class="customise-header">STEP 2：定制设置 <a-button type="link" @click="toggle">{{collapsed ? '显示' : '隐藏'}}</a-button></h3>
+  <h3 class="customise-header">STEP 2：定制设置 <a-button type="link" @click="toggle">{{collapsed ? '显示' : '隐藏'}}</a-button>
+  </h3>
   <div v-if="!collapsed">
     <div class="item-block">
       <h4>标题</h4>
@@ -8,13 +9,13 @@
         <a-input style="width: 180px" v-model:value="title" @blur="saveTitle" />
       </div>
     </div>
-    <div class="item-block">
+    <!-- <div class="item-block">
       <h4>最大同步数量</h4>
       <p>限制每次同步的最大数量。默认 0，同步所有 memos。</p>
       <div>
         <a-input-number id="inputNumber" v-model:value="maxCount" :min="0" :step="50" @blur="saveMaxCount" />
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
