@@ -1,7 +1,5 @@
 # Logseq Flomo Plugin
 
-简体中文 | [English](./README-en_US.md)
-
 ✨ 同步 flomo 笔记至 logseq。
 
 > **🚦 重要提示**：
