@@ -10,7 +10,7 @@
 ## 🔨 Preparation for use
 
 因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。请下载此项目（[flomo-proxy-server](https://github.com/swiftwind0405/flomo-proxy-server/releases)），运行起来后方可继续使用本插件。
-用于数据请求的授权信息字段， 请参照下面 Q&A 中的quesion1部分获取。
+用于数据请求的授权信息字段， 请参照下面 [Q&A](#-q--a) 中的[quesion1](#1-how-to-get-the-authorization-info)部分获取。
 
 ## 📦 同步说明
 
