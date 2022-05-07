@@ -6,8 +6,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build",
-    "build:watch": "vite build --watch"
+    "build": "vite build"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
