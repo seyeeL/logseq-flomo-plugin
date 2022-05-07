@@ -22,8 +22,5 @@ export default {
     },
   },
   build: {
-    watch: {
-      include: 'src/**'
-    }
   }
 }
