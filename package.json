@@ -1,6 +1,6 @@
 {
   "name": "logseq-flomo-plugin",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "dist/index.html",
   "author": "Seyee and Stanley",
   "scripts": {
@@ -23,6 +23,10 @@
     "vue": "^3.2.6"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^8.0.3",
     "@vitejs/plugin-vue": "^1.6.0",
     "@vue/compiler-sfc": "^3.0.4",
     "vite": "^2.5.1"
