@@ -27,7 +27,7 @@ export default {
     Customise,
     Sync,
   },
-  data() {
+  data () {
     return {
       visible: false,
       maxCount: 0,
@@ -39,26 +39,26 @@ export default {
     };
   },
   watch: {
-    visible(value) {
+    visible (value) {
       console.log('watch visible', value)
       if (!value) {
         this.hideMainUI()
       }
     }
   },
-  async mounted() {
+  async mounted () {
     console.log('refresh flomo plugin');
-    if (isDevelopment) {
-      import("../temp/setting.json").then((s) => {
-        console.log('dev', s);
-        this.visible = true
-        this.maxCount = s.maxCount;
-        this.title = s.title;
-        this.cookie = s.cookie;
-        this.token = s.token;
-        this.userId = s.userId;
-      });
-    }
+    // if (isDevelopment) {
+    //   import("../temp/setting.json").then((s) => {
+    //     console.log('dev', s);
+    //     this.visible = true
+    //     this.maxCount = s.maxCount;
+    //     this.title = s.title;
+    //     this.cookie = s.cookie;
+    //     this.token = s.token;
+    //     this.userId = s.userId;
+    //   });
+    // }
 
     logseq.once('ui:visible:changed', ({ visible }) => {
       visible && (this.visible = true);
@@ -82,7 +82,7 @@ export default {
     })
   },
   methods: {
-    hideMainUI() {
+    hideMainUI () {
       logseq.hideMainUI();
     },
   },
