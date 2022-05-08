@@ -220,7 +220,6 @@ export default defineComponent({
         }
         console.log('n_block_id', n_block_id)
         if (files?.length) {
-          n_sibling = true
           img_block_id = await handleImgsFromFlomo(files, n_block_id)
         }
         if (backlinked_count) {
