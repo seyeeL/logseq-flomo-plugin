@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+axios.defaults.withCredentials = true;
+
 axios.interceptors.response.use(res => {
   if (typeof res.data !== 'object') {
       console.log('服务端异常！')
