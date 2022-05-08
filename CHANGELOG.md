@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.2...v1.2.3) (2022-05-08)
+
+
+### Bug Fixes
+
+* logseq ui changed once to on ([d2e7048](https://github.com/SeyeeL/logseq-flomo-plugin/commit/d2e70485d139c3f26f7c220bd6a480728abd1749))
+
 ## [1.2.2](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.1...v1.2.2) (2022-05-08)
 
 
