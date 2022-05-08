@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.0...v1.3.1) (2022-05-08)
+
+
+### Bug Fixes
+
+* open error ([c417a14](https://github.com/SeyeeL/logseq-flomo-plugin/commit/c417a149e8869967634da470f7e483e8583e3707))
+
 # [1.3.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.6...v1.3.0) (2022-05-08)
 
 
