@@ -17,8 +17,8 @@
 3. 批注也是作为子节点同步，如果批注带有标签，只会同步在被批注的节点下，不会作为一级内容同步，避免重复同步。
 4. 如果同步过的内容在flomo里修改了内容，再次使用插件同步后，logseq里的内容会更新。
 5. flomo里删除的内容，在logseq里不会因为同步而删除。
-![image](https://github.com/SeyeeL/logseq-flomo-plugin/blob/main/src/assets/example.png)
-![image](https://github.com/SeyeeL/logseq-flomo-plugin/blob/main/src/assets/example2.png)
+![image](./src/assets/example.png)
+![image](./src//assets/example2.png)
 
 ## 💡 常见问题
 
@@ -27,4 +27,4 @@
 1. 在你的浏览器登陆 flomo 账号后，按 F12 打开浏览器控制台后再次刷新 flomo 的页面
 2. 找到列表中为 tz=8:0 的接口，复制里面的 userId、cookie、x-xsrf-token 到 logseq 插件的弹窗
 
-![image](https://github.com/SeyeeL/logseq-flomo-plugin/blob/main/src/assets/getCookie.png)
+![image](./src/assets/getCookie.png)
