@@ -137,21 +137,22 @@ export default defineComponent({
       }
       await insertBlock(uuid, memos)
     }
-    async function insertBlock (uuid, memos, afterImgBlock) {
-      const getBlockTree = await logseq.Editor.getBlock(uuid, { includeChildren: true });
-      console.log(`insertBlock start: getBlockTree`, getBlockTree);
+    async function insertBlock (uuid, memos, has_img_memo_id) {
+      // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
+      const treeId = has_img_memo_id || uuid
+      console.log(`insertBlock start: treeId`, treeId);
+      const getBlockTree = await logseq.Editor.getBlock(treeId, { includeChildren: true });
+      console.log(`getBlockTree`, getBlockTree);
       let childrenTree = getBlockTree?.children
-      let before = false
       let n_uuid = uuid
       for (const item of memos) {
-        console.log(`memos item`, item);
+        console.log(`memo item`, item);
         let img_block_id
         let oldUuid
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
         if (childrenTree?.length) {
-          before = true
           n_uuid = childrenTree[0].uuid
           for (let i = 0; i < childrenTree.length; i++) {
             if (childrenTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
@@ -163,7 +164,7 @@ export default defineComponent({
                   img_block_id = await handleImgsFromFlomo(files, childrenTree[i].uuid)
                 }
                 if (backlinked_count) {
-                  await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : childrenTree[i].uuid, img_block_id ? true : false)
+                  await handleBacklinkedsFromFlomo(slug, img_block_id || childrenTree[i].uuid, img_block_id ? childrenTree[i].uuid : false)
                 }
                 break
               }
@@ -212,8 +213,9 @@ export default defineComponent({
           await logseq.Editor.updateBlock(oldUuid, n_content);
           n_block_id = oldUuid
         } else {
-          // console.log('sibling', sibling);
-          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling: afterImgBlock ? true : false, isPageBlock: false, before });
+          const before = childrenTree?.length !== 0 && !has_img_memo_id
+          console.log('before', before, childrenTree?.length, has_img_memo_id);
+          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling: has_img_memo_id ? true : false, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
           await logseq.Editor.insertBlock(n_block_id, '', { sibling: true, isPageBlock: false, before: false });
@@ -223,7 +225,7 @@ export default defineComponent({
           img_block_id = await handleImgsFromFlomo(files, n_block_id)
         }
         if (backlinked_count) {
-          await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : n_block_id, img_block_id ? true : false)
+          await handleBacklinkedsFromFlomo(slug, img_block_id || n_block_id, img_block_id ? n_block_id : false)
         }
       }
     }
@@ -250,8 +252,8 @@ export default defineComponent({
         return res.uuid
       }
     }
-    async function handleBacklinkedsFromFlomo (slug, n_block_id, afterImgBlock) {
-      console.log('handleBacklinkedsFromFlomo', slug, n_block_id, afterImgBlock);
+    async function handleBacklinkedsFromFlomo (slug, n_block_id, has_img_memo_id) {
+      console.log('handleBacklinkedsFromFlomo', slug, n_block_id, has_img_memo_id);
       const { cookie, token, server } = s;
       const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
@@ -262,7 +264,7 @@ export default defineComponent({
           memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
         })
         );
-        await insertBlock(n_block_id, rows, afterImgBlock)
+        await insertBlock(n_block_id, rows, has_img_memo_id)
       }
     }
     return {
