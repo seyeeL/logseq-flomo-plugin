@@ -73,13 +73,6 @@ export default {
       this.server = s.server;
       axios.defaults.baseURL = s.server;
     })
-
-    logseq.on('ui:visible:changed', async ({ visible }) => {
-      console.log('visible', visible)
-      if (visible) {
-        this.visible = visible;
-      }
-    })
   },
   methods: {
     hideMainUI () {
