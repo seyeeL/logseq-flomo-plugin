@@ -12,8 +12,6 @@
 </template>
 
 <script>
-import axios from 'axios';
-
 import Basic from './components/Basic.vue';
 import Customise from './components/Customise.vue';
 import Sync from './components/Sync.vue';
@@ -71,7 +69,6 @@ export default {
       this.token = s.token;
       this.userId = s.userId;
       this.server = s.server;
-      axios.defaults.baseURL = s.server;
     })
   },
   methods: {

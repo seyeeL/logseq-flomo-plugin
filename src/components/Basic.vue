@@ -1,14 +1,15 @@
 <template>
-  <h3>STEP 1：基本设置</h3>
-  <a-tooltip placement="bottom">
-    <template #title>
-      <span>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参照该链接方式获取。<br>Proxy
-    Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
-    </template>
-    <question-circle-outlined />
-  </a-tooltip>
-
-  <p></p>
+  <h3>
+    STEP 1：基本设置
+     <a-tooltip placement="bottom">
+      <template #title>
+        <span>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参照该链接方式获取。<br>Proxy
+      Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
+      </template>
+      <question-circle-outlined />
+    </a-tooltip>
+  </h3>
+ 
   <a-row class="basic-row">
     <a-col :span="6">
       <div class="item-label"><label>userId</label></div>
@@ -35,7 +36,15 @@
   </a-row>
   <a-row class="basic-row">
     <a-col :span="6">
-      <div class="item-label"><label>Proxy Server</label></div>
+      <div class="item-label">
+        <label>Proxy Server</label>
+        <a-tooltip>
+          <template #title>
+            <span>可下载 <a href="https://github.com/swiftwind0405/flomo-proxy-server/releases" target="_blank">flomo-proxy-server</a> 配合食用<br>默认地址为 http://localhost:3228</span>
+          </template>
+          <question-circle-outlined style="margin-left: 4px"/>
+        </a-tooltip>
+      </div>
     </a-col>
     <a-col :span="16">
       <a-input v-model:value="server" placeholder="Proxy Server" @blur="saveServer" />
@@ -72,11 +81,6 @@
 .basic-row {
   margin-bottom: 20px;
 }
-.anticon.anticon-question-circle {
-  position: absolute;
-  left: 167px;
-  top: 86px;
-}
 </style>
 
 <script>
@@ -84,6 +88,8 @@ import { defineComponent, ref, toRef, toRefs, reactive } from 'vue';
 import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons-vue";
 
 import { loadStatFromFlomo } from '../utils';
+import axios from '../utils/axios'
+
 export default defineComponent({
   components: {
     ExclamationCircleOutlined, QuestionCircleOutlined
@@ -138,6 +144,11 @@ export default defineComponent({
       logseq.updateSettings({ token: logseqSettings.token });
     };
     const saveServer = () => {
+      if (!logseqSettings.server) {
+        logseq.App.showMsg('请填写Proxy Sever地址', 'error');
+        return;
+      }
+      axios.defaults.baseURL = logseqSettings.server;
       logseq.updateSettings({ server: logseqSettings.server });
     };
     const logseqSettingsRef = toRefs(logseqSettings);
