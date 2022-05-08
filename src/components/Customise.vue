@@ -40,9 +40,10 @@ export default defineComponent({
     },
   },
   setup(props, content) {
+    const s = logseq.settings || {};
     const logseqSettings = reactive({
-      maxCount: props.maxCount,
-      title: props.title,
+      maxCount: ref(s.maxCount),
+      title: ref(s.title),
       collapsed: ref(true),
     });
     const saveMaxCount = () => {

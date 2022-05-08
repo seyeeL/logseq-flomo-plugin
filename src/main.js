@@ -1,47 +1,51 @@
 import '@logseq/libs';
 import { createApp } from 'vue';
 import App from './App.vue';
+import { initializeSettings } from './utils/baseInfo'
+
 import './index.css';
 const isDevelopment = import.meta.env.DEV
 const app = createApp(App)
 
-/**
- * user model
- */
-function createModel() {
-  return {
-    openFlomo() {
-      logseq.showMainUI();
-    },
-  };
-}
-
-/**
- * app entry
- */
-function main() {
-  logseq.setMainUIInlineStyle({
-    position: 'fixed',
-    zIndex: 11,
-  });
-
-  // external btns
-  logseq.App.registerUIItem('toolbar', {
-    key: 'open-flomo',
-    template: `
-      <a class="button" data-on-click="openFlomo">
-        <i class="ti ti-clear-all"></i>
-      </a>
-    `,
-  });
-
-  // main UI
-  createApp(App).mount('#app');
+function renderApp() {
+  app.mount('#app');
 }
 
 if (isDevelopment) {
-  app.mount('#app')
+  renderApp();
 } else {
-  // bootstrap
-  logseq.ready(createModel()).then(main);
+  logseq.ready(() => {
+    initializeSettings()
+
+    logseq.on('ui:visible:changed', (e) => {
+      console.log('ui:visible:changed', e)
+      if (!e.visible) {
+        app.unmount();
+      }
+    })
+
+    logseq.provideModel({
+      show() {
+        renderApp();
+        logseq.showMainUI()
+      },
+    })
+
+    logseq.App.registerUIItem('toolbar', {
+      key: 'logseq-flomo-plugin',
+      template: `
+        <a class="button" data-on-click="show">
+          <i class="ti ti-clear-all"></i>
+        </a>
+      `,
+    });
+
+    logseq.App.registerCommandPalette({
+      key: 'logseq-flomo-plugin:show',
+      label: 'Show flomo',
+    }, data => {
+      renderApp()
+      logseq.showMainUI()
+    })
+  })
 }

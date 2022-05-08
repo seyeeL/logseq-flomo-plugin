@@ -94,30 +94,13 @@ export default defineComponent({
   components: {
     ExclamationCircleOutlined, QuestionCircleOutlined
   },
-  props: {
-    userId: {
-      type: String,
-      default: '',
-    },
-    cookie: {
-      type: String,
-      default: '',
-    },
-    token: {
-      type: String,
-      default: '',
-    },
-    server: {
-      type: String,
-      default: '',
-    },
-  },
   setup(props, content) {
+    const s = logseq.settings || {};
     const logseqSettings = reactive({
-      userId: props.userId,
-      cookie: props.cookie,
-      token: props.token,
-      server: props.server,
+      userId: ref(s.userId),
+      cookie: ref(s.cookie),
+      token: ref(s.token),
+      server: ref(s.server),
       totalCount: ref(0),
     });
     async function refresh() {

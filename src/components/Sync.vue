@@ -20,25 +20,19 @@ import cheerio from 'cheerio';
 import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
 
 export default defineComponent({
-  props: {
-    title: {
-      type: String,
-      default: 'flomo',
-    },
-  },
   setup(props) {
+    const s = logseq.settings || {};
     const syncData = reactive({
-      title: props.title,
+      title: ref(s.title),
       progressPercentage: ref(0),
       updating: ref(false),
       syncing: ref(false),
     });
-    const logseqSettings = logseq.settings || {};
     const dataRef = toRefs(syncData);
     async function sync() {
       console.log('sync start')
       syncData.syncing = true;
-      const { cookie, token, server } = logseqSettings;
+      const { cookie, token, server } = s;
       try {
         const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
         if (tags.length > 0) {
@@ -65,7 +59,7 @@ export default defineComponent({
         // if (i > 0) {
         //   return
         // }
-        const { cookie, token, server } = logseqSettings;
+        const { cookie, token, server } = s;
         const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
           const rows = memos.map((memo) => ({
@@ -112,7 +106,7 @@ export default defineComponent({
     }
     async function loadPageNotes(pageName, memos) {
       if (!pageName || !memos) return;
-      const { title } = syncData;
+      const { title } = s;
       console.log(`title ${title}`);
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown
       const pagePropBlockString = `[[${title}]]\n#+flomo_tag: ${pageName}`; // org
@@ -253,7 +247,7 @@ export default defineComponent({
     }
     async function handleBacklinkedsFromFlomo(slug, n_block_id, sibling) {
       console.log('handleBacklinkedsFromFlomo');
-      const { cookie, token, server } = logseqSettings;
+      const { cookie, token, server } = s;
       const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
         const backlinkeds = memo.backlinkeds
