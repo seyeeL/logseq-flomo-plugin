@@ -144,11 +144,9 @@ export default defineComponent({
       logseq.updateSettings({ token: logseqSettings.token });
     };
     const saveServer = () => {
-      if (!logseqSettings.server) {
-        logseq.App.showMsg('请填写Proxy Sever地址', 'error');
-        return;
+      if (logseqSettings.server) {
+        axios.defaults.baseURL = logseqSettings.server;
       }
-      axios.defaults.baseURL = logseqSettings.server;
       logseq.updateSettings({ server: logseqSettings.server });
     };
     const logseqSettingsRef = toRefs(logseqSettings);
