@@ -1,3 +1,10 @@
+## [1.3.5](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.4...v1.3.5) (2022-05-08)
+
+
+### Bug Fixes
+
+* backlined memos sync repeat ([4b28f5c](https://github.com/SeyeeL/logseq-flomo-plugin/commit/4b28f5c0db10c3fd9992a6540631ea252a951e42))
+
 ## [1.3.4](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.3...v1.3.4) (2022-05-08)
 
 
