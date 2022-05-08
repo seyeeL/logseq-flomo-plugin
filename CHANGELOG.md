@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.4...v1.2.5) (2022-05-08)
+
+
+### Bug Fixes
+
+* error when sync ([f54e60a](https://github.com/SeyeeL/logseq-flomo-plugin/commit/f54e60a27187e944c092055829ed8635dae1438d))
+
 ## [1.2.4](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.3...v1.2.4) (2022-05-08)
 
 
