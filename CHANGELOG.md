@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.0...v1.2.1) (2022-05-08)
+
+
+### Bug Fixes
+
+* cors ([02b74fc](https://github.com/SeyeeL/logseq-flomo-plugin/commit/02b74fc5d2fffef66233733ecb60bcb622002e2c))
+
 # [1.2.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.1.1...v1.2.0) (2022-05-08)
 
 
