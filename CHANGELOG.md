@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.6...v1.3.0) (2022-05-08)
+
+
+### Features
+
+* initialize settings ([1360909](https://github.com/SeyeeL/logseq-flomo-plugin/commit/1360909fe6bf63ffa4d0c4327da9e1da50b9343e))
+
 ## [1.2.6](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.5...v1.2.6) (2022-05-08)
 
 
