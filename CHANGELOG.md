@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.1.1...v1.2.0) (2022-05-08)
+
+
+### Bug Fixes
+
+* show dialog visible twice ([e1721b1](https://github.com/SeyeeL/logseq-flomo-plugin/commit/e1721b1a70f3f1d2df9c332a0bfd2d723d5d78f8))
+
+
+### Features
+
+* add proxy tip ([bf046ca](https://github.com/SeyeeL/logseq-flomo-plugin/commit/bf046ca70f35a3b728086b272d8857eeb0faebcd))
+
 ## [1.1.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.1.0...v1.1.1) (2022-05-08)
 
 
