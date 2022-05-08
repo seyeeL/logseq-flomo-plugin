@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.1...v1.2.2) (2022-05-08)
+
+
+### Bug Fixes
+
+* modal close ([4d38368](https://github.com/SeyeeL/logseq-flomo-plugin/commit/4d38368f9d1293c4f0c1eb30b1c0c0590f0da839))
+
 ## [1.2.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.2.0...v1.2.1) (2022-05-08)
 
 
