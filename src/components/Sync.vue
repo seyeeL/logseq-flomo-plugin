@@ -18,9 +18,10 @@ import { defineComponent, ref, toRefs, reactive } from 'vue';
 import cheerio from 'cheerio';
 
 import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
+import { after } from 'cheerio/lib/api/manipulation';
 
 export default defineComponent({
-  setup(props) {
+  setup (props) {
     const s = logseq.settings || {};
     const syncData = reactive({
       title: ref(s.title),
@@ -29,7 +30,7 @@ export default defineComponent({
       syncing: ref(false),
     });
     const dataRef = toRefs(syncData);
-    async function sync() {
+    async function sync () {
       console.log('sync start')
       syncData.syncing = true;
       const { cookie, token, server } = s;
@@ -43,11 +44,12 @@ export default defineComponent({
           syncData.syncing = false;
         }
       } catch (e) {
+        console.log('catch e', e)
         syncData.syncing = false;
         logseq.App.showMsg('连接服务器出错，请检查配置', 'error');
       }
     }
-    async function handleByTags(tags) {
+    async function handleByTags (tags) {
       const interval = parseFloat((100 / tags.length).toFixed(2));
       for (let i = 0; i < tags.length; i++) {
         let tagName = tags[i].name
@@ -74,7 +76,7 @@ export default defineComponent({
       }
     }
 
-    async function loadPage(tag, memos) {
+    async function loadPage (tag, memos) {
       console.log(`load page: ${tag}`);
       if (!tag || syncData.updating) return;
       syncData.updating = true;
@@ -99,47 +101,48 @@ export default defineComponent({
           puuid = page.uuid
         }
         console.log('uuid', puuid)
-        loadPageNotes(pageName, memos, puuid)
+        await loadPageNotes(pageName, memos, puuid)
       } finally {
         syncData.updating = false;
       }
     }
-    async function loadPageNotes(pageName, memos) {
+    async function loadPageNotes (pageName, memos) {
       if (!pageName || !memos) return;
       const { title } = s;
-      console.log(`title ${title}`);
+      console.log(`flomo根节点 ${title}`);
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown
       const pagePropBlockString = `[[${title}]]\n#+flomo_tag: ${pageName}`; // org
       // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log(`pageBlocksTree ${pageName}`, pageBlocksTree);
       let pagePropBlock
-      let pageUuid
+      let uuid
+      // 页面完全为空
       if (pageBlocksTree.length === 0) {
-        pagePropBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
-        // pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
-        console.log(`pagePropBlock ${pageName}`, pagePropBlock);
-        pageUuid = pagePropBlock.uuid
+        firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
+        console.log(`createFirstBlock ${pageName}`, firstBlock);
+        uuid = firstBlock.uuid
       } else {
+        //页面不为空匹配 flomo 一级节点
         for (let i = 0; i < pageBlocksTree.length; i++) {
           if (pageBlocksTree[i].content.indexOf(`[[${title}]]\n#+flomo_tag: ${pageName}`) !== -1) {
-            pageUuid = pageBlocksTree[i].uuid
+            uuid = pageBlocksTree[i].uuid
             break
           }
         }
       }
-      if (!pageUuid) {
+      // 没匹配到一级节点
+      if (!uuid) {
         pagePropBlock = await logseq.Editor.insertBlock(pageBlocksTree[0].uuid, pagePropBlockString, { isPageBlock: false, sibling: true });
-        pageUuid = pagePropBlock.uuid
+        uuid = pagePropBlock.uuid
       }
-      await insertBlock(pageUuid, memos, false)
+      await insertBlock(uuid, memos)
     }
-    async function insertBlock(uuid, memos, sibling) {
+    async function insertBlock (uuid, memos, afterImgBlock) {
       const getBlockTree = await logseq.Editor.getBlock(uuid, { includeChildren: true });
       console.log(`insertBlock start: getBlockTree`, getBlockTree);
-      let oldTree = getBlockTree?.children
+      let childrenTree = getBlockTree?.children
       let before = false
-      let n_sibling = sibling
       let n_uuid = uuid
       for (const item of memos) {
         console.log(`memos item`, item);
@@ -148,25 +151,24 @@ export default defineComponent({
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
-        if (oldTree.length) {
+        if (childrenTree.length) {
           before = true
-          n_uuid = oldTree[0].uuid
-          for (let i = 0; i < oldTree.length; i++) {
-            if (oldTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
+          n_uuid = childrenTree[0].uuid
+          for (let i = 0; i < childrenTree.length; i++) {
+            if (childrenTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
               hasOld = true
-              console.log(`历史节点已存在uuid  ${oldTree[i].content} `);
-              if (oldTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
+              console.log(`历史节点已存在uuid  ${childrenTree[i].content} `);
+              if (childrenTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
                 console.log("且时间匹配");
                 if (files?.length) {
-                  n_sibling = true
-                  img_block_id = await handleImgsFromFlomo(files, oldTree[i].uuid)
+                  img_block_id = await handleImgsFromFlomo(files, childrenTree[i].uuid)
                 }
                 if (backlinked_count) {
-                  await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : oldTree[i].uuid, n_sibling)
+                  await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : childrenTree[i].uuid, img_block_id ? true : false)
                 }
                 break
               }
-              oldUuid = oldTree[i].uuid //时间不匹配
+              oldUuid = childrenTree[i].uuid //时间不匹配
               break
             }
           }
@@ -211,7 +213,7 @@ export default defineComponent({
           n_block_id = oldUuid
         } else {
           // console.log('sibling', sibling);
-          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling, isPageBlock: false, before });
+          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling: afterImgBlock ? true : false, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
           await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
@@ -222,11 +224,11 @@ export default defineComponent({
           img_block_id = await handleImgsFromFlomo(files, n_block_id)
         }
         if (backlinked_count) {
-          await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : n_block_id, n_sibling)
+          await handleBacklinkedsFromFlomo(slug, img_block_id ? img_block_id : n_block_id, img_block_id ? true : false)
         }
       }
     }
-    async function handleImgsFromFlomo(files, n_block_id) {
+    async function handleImgsFromFlomo (files, n_block_id) {
       let imgContent = ''
       let block_id = n_block_id
       const n_BlockTree = await logseq.Editor.getBlock(n_block_id, { includeChildren: true });
@@ -245,8 +247,8 @@ export default defineComponent({
         return await logseq.Editor.insertBlock(block_id, imgContent, { sibling: true, isPageBlock: false, before: true });
       }
     }
-    async function handleBacklinkedsFromFlomo(slug, n_block_id, sibling) {
-      console.log('handleBacklinkedsFromFlomo');
+    async function handleBacklinkedsFromFlomo (slug, n_block_id, afterImgBlock) {
+      console.log('handleBacklinkedsFromFlomo', slug, n_block_id, afterImgBlock);
       const { cookie, token, server } = s;
       const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
@@ -257,7 +259,7 @@ export default defineComponent({
           memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
         })
         );
-        await insertBlock(n_block_id, rows, sibling)
+        await insertBlock(n_block_id, rows, afterImgBlock)
       }
     }
     return {
