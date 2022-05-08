@@ -33,6 +33,7 @@ export default defineComponent({
       updating: ref(false),
       syncing: ref(false),
     });
+    const logseqSettings = logseq.settings || {};
     const dataRef = toRefs(syncData);
     async function sync() {
       console.log('sync start')
