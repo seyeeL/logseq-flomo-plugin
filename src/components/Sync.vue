@@ -18,7 +18,6 @@ import { defineComponent, ref, toRefs, reactive } from 'vue';
 import cheerio from 'cheerio';
 
 import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
-import { after } from 'cheerio/lib/api/manipulation';
 
 export default defineComponent({
   setup (props) {
@@ -119,7 +118,7 @@ export default defineComponent({
       let uuid
       // 页面完全为空
       if (pageBlocksTree.length === 0) {
-        firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
+        const firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
         console.log(`createFirstBlock ${pageName}`, firstBlock);
         uuid = firstBlock.uuid
       } else {
@@ -151,7 +150,7 @@ export default defineComponent({
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
         if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
-        if (childrenTree.length) {
+        if (childrenTree?.length) {
           before = true
           n_uuid = childrenTree[0].uuid
           for (let i = 0; i < childrenTree.length; i++) {
@@ -209,6 +208,7 @@ export default defineComponent({
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
         let n_block_id
         if (oldUuid) {
+          console.log('oldUuid', oldUuid)
           await logseq.Editor.updateBlock(oldUuid, n_content);
           n_block_id = oldUuid
         } else {
@@ -216,7 +216,7 @@ export default defineComponent({
           let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling: afterImgBlock ? true : false, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
-          await logseq.Editor.insertBlock(n_block.uuid, '', { sibling: true, isPageBlock: false, before: false });
+          await logseq.Editor.insertBlock(n_block_id, '', { sibling: true, isPageBlock: false, before: false });
         }
         console.log('n_block_id', n_block_id)
         if (files?.length) {
@@ -237,13 +237,17 @@ export default defineComponent({
       }
       imgContent = `${imgContent}\n#+isImg: true`
       if (n_BlockTree?.children.length === 0) {
-        return await logseq.Editor.insertBlock(block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
+        const res = await logseq.Editor.insertBlock(block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
+        console.log('res1', res)
+        return res.uuid
       } else if (n_BlockTree?.children?.[0].content.indexOf(`#+isImg: true`) !== -1) {
         await logseq.Editor.updateBlock(n_BlockTree.children[0].uuid, imgContent);
         return n_BlockTree.children[0].uuid
       } else {
         block_id = n_BlockTree.children[0].uuid
-        return await logseq.Editor.insertBlock(block_id, imgContent, { sibling: true, isPageBlock: false, before: true });
+        const res = await logseq.Editor.insertBlock(block_id, imgContent, { sibling: true, isPageBlock: false, before: true });
+        console.log('res2', res)
+        return res.uuid
       }
     }
     async function handleBacklinkedsFromFlomo (slug, n_block_id, afterImgBlock) {
