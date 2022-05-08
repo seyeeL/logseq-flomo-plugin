@@ -45,20 +45,7 @@ export default {
     }
   },
   async mounted () {
-    console.log('refresh flomo plugin');
-    // if (isDevelopment) {
-    //   import("../temp/setting.json").then((s) => {
-    //     console.log('dev', s);
-    //     this.visible = true
-    //     this.maxCount = s.maxCount;
-    //     this.title = s.title;
-    //     this.cookie = s.cookie;
-    //     this.token = s.token;
-    //     this.userId = s.userId;
-    //   });
-    // }
-
-    logseq.once('ui:visible:changed', ({ visible }) => {
+    logseq.on('ui:visible:changed', ({ visible }) => {
       visible && (this.visible = true);
       // init
       const s = logseq.settings;
