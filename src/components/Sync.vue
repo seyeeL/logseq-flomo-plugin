@@ -21,18 +21,6 @@ import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } f
 
 export default defineComponent({
   props: {
-    cookie: {
-      type: String,
-      default: '',
-    },
-    token: {
-      type: String,
-      default: '',
-    },
-    server: {
-      type: String,
-      default: '',
-    },
     title: {
       type: String,
       default: 'flomo',
@@ -40,9 +28,6 @@ export default defineComponent({
   },
   setup(props) {
     const syncData = reactive({
-      cookie: props.cookie,
-      token: props.token,
-      server: props.server,
       title: props.title,
       progressPercentage: ref(0),
       updating: ref(false),
@@ -52,7 +37,7 @@ export default defineComponent({
     async function sync() {
       console.log('sync start')
       syncData.syncing = true;
-      const { cookie, token, server } = syncData;
+      const { cookie, token, server } = logseqSettings;
       try {
         const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
         if (tags.length > 0) {
@@ -79,7 +64,7 @@ export default defineComponent({
         // if (i > 0) {
         //   return
         // }
-        const { cookie, token, server } = syncData;
+        const { cookie, token, server } = logseqSettings;
         const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
           const rows = memos.map((memo) => ({
@@ -267,7 +252,7 @@ export default defineComponent({
     }
     async function handleBacklinkedsFromFlomo(slug, n_block_id, sibling) {
       console.log('handleBacklinkedsFromFlomo');
-      const { cookie, token, server } = syncData;
+      const { cookie, token, server } = logseqSettings;
       const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
         const backlinkeds = memo.backlinkeds
