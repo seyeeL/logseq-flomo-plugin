@@ -5,9 +5,10 @@ import { initializeSettings } from './utils/baseInfo'
 
 import './index.css';
 const isDevelopment = import.meta.env.DEV
-const app = createApp(App)
+let app = createApp(App)
 
 function renderApp() {
+  app = createApp(App);
   app.mount('#app');
 }
 
@@ -18,16 +19,16 @@ if (isDevelopment) {
     initializeSettings()
 
     logseq.on('ui:visible:changed', (e) => {
-      console.log('ui:visible:changed', e)
       if (!e.visible) {
         app.unmount();
+        app = null;
       }
     })
 
     logseq.provideModel({
       show() {
-        renderApp();
         logseq.showMainUI()
+        renderApp();
       },
     })
 
