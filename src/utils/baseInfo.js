@@ -2,6 +2,8 @@ const DEFAULT_SETTINGS = {
   userId: 0,
   cookie: '',
   token: '',
+  syncMode: '1',
+  exportMode: false,
   maxCount: 0,
   title: "flomo",
   server: "http://localhost:3228"

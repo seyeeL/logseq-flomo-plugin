@@ -38,3 +38,12 @@ export const getBacklinkedsFromFlomo = ({slug, token, cookie, server}) => {
         }
     );
 };
+
+export const fetchMemosByDateFromFlomo = ({token, cookie, server, start_date, end_date}) => {
+    return http.get(
+        `${server}/api/memo/?tag=&start_date=${start_date}&end_date=${end_date}&tz=8:0`,
+        {
+            headers: { fuck_cookie: cookie, "X-XSRF-TOKEN": token },
+        }
+    );
+};

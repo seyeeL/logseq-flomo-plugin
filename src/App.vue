@@ -5,9 +5,9 @@
     </template>
     <Basic></Basic>
     <a-divider />
-    <Customise></Customise>
+    <Customise :syncRange="syncRange" @syncRangeChange="syncRangeChange"></Customise>
     <a-divider />
-    <Sync></Sync>
+    <Sync :syncRange="syncRange"></Sync>
   </a-modal>
 </template>
 
@@ -15,6 +15,7 @@
 import Basic from './components/Basic.vue';
 import Customise from './components/Customise.vue';
 import Sync from './components/Sync.vue';
+import dayjs from 'dayjs';
 
 export default {
   name: "App",
@@ -26,6 +27,7 @@ export default {
   data () {
     return {
       visible: false,
+      syncRange: [dayjs().subtract(100, 'days'), dayjs()],
     };
   },
   mounted () {
@@ -34,6 +36,9 @@ export default {
   methods: {
     hideMainUI () {
       logseq.hideMainUI();
+    },
+    syncRangeChange (val) {
+      this.syncRange = val;
     },
   },
 };

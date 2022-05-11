@@ -16,10 +16,16 @@
 <script>
 import { defineComponent, ref, toRefs, reactive } from 'vue';
 import cheerio from 'cheerio';
+import dayjs from 'dayjs';
 
-import { fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
+import { fetchMemosByDateFromFlomo, fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
 
 export default defineComponent({
+  props: {
+    syncRange: {
+      type: Array,
+    },
+  },
   setup (props) {
     const s = logseq.settings || {};
     const syncData = reactive({
@@ -32,7 +38,19 @@ export default defineComponent({
     async function sync () {
       console.log('sync start')
       syncData.syncing = true;
-      const { cookie, token, server } = s;
+      const { cookie, token, server, syncMode, exportMode } = s;
+
+      const [start, end] = props.syncRange
+      const start_date = dayjs(start).format('YYYY-MM-DD');
+      const end_date = dayjs(end).format('YYYY-MM-DD');
+
+      console.log('同步模式=>', syncMode)
+      console.log('导出=>', exportMode)
+      const {memos} = await fetchMemosByDateFromFlomo({cookie, token, server, start_date, end_date})
+      console.log(`${start_date} 到 ${end_date} 的 memos`, memos)
+
+      return;
+      
       try {
         const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
         if (tags.length > 0) {
