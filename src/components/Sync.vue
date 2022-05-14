@@ -39,9 +39,8 @@ export default defineComponent({
     async function sync () {
       console.log('sync start')
       syncData.syncing = true;
-      const { cookie, token, server, syncMode, exportMode } = s;
+      const { cookie, token, server, syncMode } = s;
       console.log('同步模式=>', syncMode)
-      console.log('导出=>', exportMode)
 
       const [start, end] = props.syncRange
       const start_date = dayjs(start).format('YYYY-MM-DD');
@@ -70,11 +69,15 @@ export default defineComponent({
               if (memos.length > 0) {
                 console.log('memos', memos)
                 await handleByDate(date, memos);
-                console.log('sync end')
-                logseq.App.showMsg('同步成功', 'success');
-                syncData.syncing = false;
+                syncData.progressPercentage = Number((i + 1) * interval).toFixed(1);
               }
             }
+            console.log('sync end')
+            logseq.App.showMsg('同步成功', 'success');
+            syncData.syncing = false;
+            break;
+
+          case '3': // 单页模式
             break;
 
           default:
@@ -204,6 +207,8 @@ export default defineComponent({
       await insertBlock(uuid, memos)
     }
     async function insertBlock (uuid, memos, has_img_memo_id) {
+      const { exportMode } = s;
+      console.log('导出=>', exportMode)
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
@@ -217,7 +222,7 @@ export default defineComponent({
         let oldUuid
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
-        if (linked_count && tags?.length) continue // 有引用其他标签且带标签，不同步，会展示在被引用的那条标签下
+        if (linked_count) continue // 有引用，不同步，会展示在被引用的那条memo下
         if (childrenTree?.length) {
           n_uuid = childrenTree[0].uuid
           for (let i = 0; i < childrenTree.length; i++) {
