@@ -28,3 +28,5 @@
 2. 找到列表中为 tz=8:0 的接口，复制里面的 userId、cookie、x-xsrf-token 到 logseq 插件的弹窗
 
 ![image](./src/assets/getCookie.png)
+
+### 2. 每次更新需手动在插件内操作同步，不支持自动更新
