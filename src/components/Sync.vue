@@ -17,8 +17,9 @@
 import { defineComponent, ref, toRefs, reactive } from 'vue';
 import cheerio from 'cheerio';
 import dayjs from 'dayjs';
-
-import { fetchMemosByDateFromFlomo, fetchMemosFromFlomoTag, fetchTagsFromFlomo, getBacklinkedsFromFlomo } from '../utils';
+import isBetween from "dayjs/plugin/isBetween"; // import relativeTime plugin
+dayjs.extend(isBetween); //  use
+import { fetchMemosByDate, fetchMemosByTag, fetchAllTags, getBacklinkedMemos } from '../utils';
 
 export default defineComponent({
   props: {
@@ -39,32 +40,80 @@ export default defineComponent({
       console.log('sync start')
       syncData.syncing = true;
       const { cookie, token, server, syncMode, exportMode } = s;
+      console.log('同步模式=>', syncMode)
+      console.log('导出=>', exportMode)
 
       const [start, end] = props.syncRange
       const start_date = dayjs(start).format('YYYY-MM-DD');
       const end_date = dayjs(end).format('YYYY-MM-DD');
-
-      console.log('同步模式=>', syncMode)
-      console.log('导出=>', exportMode)
-      const {memos} = await fetchMemosByDateFromFlomo({cookie, token, server, start_date, end_date})
-      console.log(`${start_date} 到 ${end_date} 的 memos`, memos)
-
-      return;
-      
+      console.log('DateFormat=>', start_date, end_date)
       try {
-        const { tags } = await fetchTagsFromFlomo({ cookie, token, server });
-        if (tags.length > 0) {
-          console.log('tags', tags)
-          await handleByTags(tags);
-          console.log('sync end')
-          logseq.App.showMsg('同步成功', 'success');
-          syncData.syncing = false;
+        switch (syncMode) {
+          case '1': // 标签模式
+            const { tags } = await fetchAllTags({ cookie, token, server });
+            if (tags.length > 0) {
+              console.log('tags', tags)
+              await handleByTags(tags);
+              console.log('sync end')
+              logseq.App.showMsg('同步成功', 'success');
+              syncData.syncing = false;
+            }
+            break;
+
+          case '2': // 日记模式
+            const groupDate = await dealDate(start_date, end_date)
+            console.log('groupDate', groupDate)
+            for (let i = 0; i < groupDate.length; i++) {
+              let date = groupDate[i]
+              const { memos } = await fetchMemosByDate({ cookie, token, server, start_date: date, end_date: date })
+              console.log(`${date} 的 memos`, memos)
+              if (memos.length > 0) {
+                console.log('memos', memos)
+                await handleByDate(date, memos);
+                console.log('sync end')
+                logseq.App.showMsg('同步成功', 'success');
+                syncData.syncing = false;
+              }
+            }
+            break;
+
+          default:
+            break;
         }
+
       } catch (e) {
         console.log('catch e', e)
         syncData.syncing = false;
         logseq.App.showMsg('连接服务器出错，请检查配置', 'error');
       }
+    }
+    function dealDate (start_date, end_date) {
+      let groupDate = [];
+      let n_start_date = dayjs(start_date).subtract(1, 'day');
+      let n_end_date = dayjs(end_date).add(1, 'day');
+      for (let start = dayjs(start_date, 'YYYY-MM-DD'); dayjs(start).isBetween(n_start_date, n_end_date); start = start.add(1, 'day')) {
+        groupDate.push(dayjs(start).format("YYYY-MM-DD"));
+      }
+      return groupDate
+    }
+    async function handleByDate (date, memos) {
+      const userConfigs = await logseq.App.getUserConfigs()
+      const preferredDateFormat = userConfigs.preferredDateFormat || ''
+      console.log('preferredDateFormat=>', preferredDateFormat)
+      let formatDate = date
+      if (preferredDateFormat) {
+        const format = preferredDateFormat
+          .replace('yyyy', 'YYYY')
+          .replace('dd', 'DD')
+          .replace('do', 'Do')
+          .replace('EEEE', 'dddd')
+          .replace('EEE', 'ddd')
+          .replace('EE', 'dd')
+          .replace('E', 'dd')
+        formatDate = dayjs(date, 'YYYY-MM-DD').format(format)
+      }
+      console.log('formatDate', formatDate)
+      await loadPage(formatDate, memos)
     }
     async function handleByTags (tags) {
       const interval = parseFloat((100 / tags.length).toFixed(2));
@@ -79,7 +128,7 @@ export default defineComponent({
         //   return
         // }
         const { cookie, token, server } = s;
-        const { memos } = await fetchMemosFromFlomoTag({ tagName, cookie, token, server });
+        const { memos } = await fetchMemosByTag({ tagName, cookie, token, server });
         if (memos?.length > 0) {
           const rows = memos.map((memo) => ({
             ...memo,
@@ -92,24 +141,23 @@ export default defineComponent({
         }
       }
     }
-
-    async function loadPage (tag, memos) {
-      console.log(`load page: ${tag}`);
-      if (!tag || syncData.updating) return;
+    async function loadPage (pageIdentity, memos) {
+      console.log(`load page: ${pageIdentity}`);
+      const syncMode = s.syncMode;
+      if (!pageIdentity || syncData.updating) return;
       syncData.updating = true;
       try {
-        const pageName = tag;
-        console.log('pageName', pageName)
-        let page = await logseq.Editor.getPage(pageName);
+        let page = await logseq.Editor.getPage(pageIdentity);
+        console.log('page', page)
         let puuid
         if (!page) {
           const result = await logseq.Editor.createPage(
-            pageName,
+            pageIdentity,
             {},
             {
               createFirstBlock: true,
               redirect: false,
-              journal: false,
+              journal: syncMode === '2',
             }
           );
           console.log('createPage', result)
@@ -118,7 +166,7 @@ export default defineComponent({
           puuid = page.uuid
         }
         console.log('uuid', puuid)
-        await loadPageNotes(pageName, memos, puuid)
+        await loadPageNotes(pageIdentity, memos, puuid)
       } finally {
         syncData.updating = false;
       }
@@ -273,7 +321,7 @@ export default defineComponent({
     async function handleBacklinkedsFromFlomo (slug, n_block_id, has_img_memo_id) {
       console.log('handleBacklinkedsFromFlomo', slug, n_block_id, has_img_memo_id);
       const { cookie, token, server } = s;
-      const { memo } = await getBacklinkedsFromFlomo({ slug, cookie, token, server })
+      const { memo } = await getBacklinkedMemos({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
         const backlinkeds = memo.backlinkeds
         console.log('backlinkeds', backlinkeds)

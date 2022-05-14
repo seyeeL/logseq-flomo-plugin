@@ -27,7 +27,8 @@ export default {
   data () {
     return {
       visible: false,
-      syncRange: [dayjs().subtract(100, 'days'), dayjs()],
+      syncRange: [dayjs().subtract(7, 'days'), dayjs()],
+      // syncRange: [dayjs().subtract(100, 'days'), dayjs()],
     };
   },
   mounted () {
@@ -43,3 +44,9 @@ export default {
   },
 };
 </script>
+
+<style lang="less" >
+span.anticon.anticon-question-circle {
+  color: #9b9b9b;
+}
+</style>
