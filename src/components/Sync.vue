@@ -19,7 +19,7 @@ import cheerio from 'cheerio';
 import dayjs from 'dayjs';
 import isBetween from "dayjs/plugin/isBetween"; // import relativeTime plugin
 dayjs.extend(isBetween); //  use
-import { fetchMemosByDate, fetchMemosByTag, fetchAllTags, getBacklinkedMemos } from '../utils';
+import { fetchMemosByDate, fetchMemosByTag, fetchAllTags, getBacklinkedMemos, loadStatFromFlomo, fetchMemosByOffset } from '../utils';
 
 export default defineComponent({
   props: {
@@ -61,6 +61,7 @@ export default defineComponent({
 
           case '2': // 日记模式
             const groupDate = await dealDate(start_date, end_date)
+            const interval = parseFloat((100 / groupDate.length).toFixed(2));
             console.log('groupDate', groupDate)
             for (let i = 0; i < groupDate.length; i++) {
               let date = groupDate[i]
@@ -78,6 +79,35 @@ export default defineComponent({
             break;
 
           case '3': // 单页模式
+            const { code, stat, message } = await loadStatFromFlomo(s);
+            if (code === 0) {
+              const memo_count = stat.memo_count
+              console.log('memo_count', memo_count)
+              // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
+              const queryTimes = Math.ceil(memo_count / 50) + 1;
+              let rows = [];
+              for (let i = 0; i < queryTimes; i++) {
+                if (i > 5) {
+                  break
+                }
+                let offset = 50 * i
+                const { memos } = await fetchMemosByOffset({ cookie, token, server, offset })
+                syncData.progressPercentage = Math.floor(100 / queryTimes) * i;
+                if (memos?.length > 0) {
+                  memos.forEach((memo) =>
+                    rows.push({
+                      ...memo,
+                      memo_url: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+                    })
+                  );
+                }
+              }
+              console.log("flomo fetch success:", rows);
+              await loadPage(s.title, rows)
+              syncData.progressPercentage = 100;
+            } else {
+              logseq.App.showMsg(`${message}，请检查配置`, 'error');
+            }
             break;
 
           default:
@@ -178,8 +208,9 @@ export default defineComponent({
       if (!pageName || !memos) return;
       const { title } = s;
       console.log(`flomo根节点 ${title}`);
+      const syncMode = s.syncMode;
       // const pagePropBlockString = `flomo\nflomo_tag::${pageName}`; // markdown
-      const pagePropBlockString = `[[${title}]]\n#+flomo_tag: ${pageName}`; // org
+      const pagePropBlockString = syncMode === '3' ? '' : `[[${title}]]\n#+flomo_tag: ${pageName}`; // org
       // const pagePropBlockString = `flomo\n:PROPERTIES:\n:flomo_tag: ${pageName}\n:END:`; // both org md
       let pageBlocksTree = await logseq.Editor.getPageBlocksTree(pageName);
       console.log(`pageBlocksTree ${pageName}`, pageBlocksTree);
@@ -190,6 +221,8 @@ export default defineComponent({
         const firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
         console.log(`createFirstBlock ${pageName}`, firstBlock);
         uuid = firstBlock.uuid
+      } else if (syncMode === '3') {
+        uuid = pageBlocksTree[0].uuid
       } else {
         //页面不为空匹配 flomo 一级节点
         for (let i = 0; i < pageBlocksTree.length; i++) {
@@ -212,9 +245,9 @@ export default defineComponent({
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
-      const getBlockTree = await logseq.Editor.getBlock(treeId, { includeChildren: true });
+      const getBlockTree = exportMode || await logseq.Editor.getBlock(treeId, { includeChildren: true });
       console.log(`getBlockTree`, getBlockTree);
-      let childrenTree = getBlockTree?.children
+      let childrenTree = exportMode || getBlockTree?.children
       let n_uuid = uuid
       for (const item of memos) {
         console.log(`memo item`, item);
@@ -223,7 +256,7 @@ export default defineComponent({
         let hasOld = false
         let { content, memo_url, created_at, updated_at, slug, backlinked_count, linked_count, tags, files } = item;
         if (linked_count) continue // 有引用，不同步，会展示在被引用的那条memo下
-        if (childrenTree?.length) {
+        if (!exportMode && childrenTree?.length) {
           n_uuid = childrenTree[0].uuid
           for (let i = 0; i < childrenTree.length; i++) {
             if (childrenTree[i].content.indexOf(`#+flomo_id: ${slug}`) !== -1) {
@@ -254,7 +287,6 @@ export default defineComponent({
         let $ = cheerio.load(content);
         if (content.indexOf('<ol>') !== -1) {
           $('ol').each(function (i, el) {
-            // this === el
             $(this).children().each(function (j, ele) {
               let str = `${j + 1}. ${$(this).text()}\n`
               console.log('str', str)
@@ -264,7 +296,6 @@ export default defineComponent({
         }
         if (content.indexOf('<ul>') !== -1) {
           $('ul').each(function (i, el) {
-            // this === el
             $(this).children().each(function (j, ele) {
               let str = `* ${$(this).text()}\n`
               console.log('str', str)
@@ -276,10 +307,10 @@ export default defineComponent({
         console.log('content', content)
         content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
-        const n_content = `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
+        const n_content = exportMode ? content : `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
         let n_block_id
-        if (oldUuid) {
+        if (!exportMode && oldUuid) {
           console.log('oldUuid', oldUuid)
           await logseq.Editor.updateBlock(oldUuid, n_content);
           n_block_id = oldUuid

@@ -11,6 +11,14 @@ export const loadStatFromFlomo = ({userId, token, cookie, server}) => {
         }
     );
 };
+export const fetchMemosByOffset = ({token, cookie, server,offset}) => {
+    return http.get(
+        `${server}/api/memo/?offset=${offset}&tz=8:0`,
+        {
+            headers: { fuck_cookie: cookie, "X-XSRF-TOKEN": token },
+        }
+    );
+};
 
 export const fetchAllTags = ({token, cookie, server}) => {
     return http.get(
