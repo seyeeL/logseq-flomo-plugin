@@ -277,35 +277,38 @@ export default defineComponent({
             }
           }
         }
+
         if (hasOld && !oldUuid) continue
-        if (content.indexOf('<p>') !== -1) {
-          content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
-        }
-        if (content.indexOf('<strong>') !== -1) {
-          content = content.replaceAll('<strong>', '**').replaceAll('</strong>', '**')
-        }
-        let $ = cheerio.load(content);
-        if (content.indexOf('<ol>') !== -1) {
-          $('ol').each(function (i, el) {
-            $(this).children().each(function (j, ele) {
-              let str = `${j + 1}. ${$(this).text()}\n`
-              console.log('str', str)
-              $(this).html(str)
+        if (content) {
+          if (content.indexOf('<p>') !== -1) {
+            content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
+          }
+          if (content.indexOf('<strong>') !== -1) {
+            content = content.replaceAll('<strong>', '**').replaceAll('</strong>', '**')
+          }
+          let $ = cheerio.load(content);
+          if (content.indexOf('<ol>') !== -1) {
+            $('ol').each(function (i, el) {
+              $(this).children().each(function (j, ele) {
+                let str = `${j + 1}. ${$(this).text()}\n`
+                console.log('str', str)
+                $(this).html(str)
+              })
             })
-          })
-        }
-        if (content.indexOf('<ul>') !== -1) {
-          $('ul').each(function (i, el) {
-            $(this).children().each(function (j, ele) {
-              let str = `* ${$(this).text()}\n`
-              console.log('str', str)
-              $(this).html(str)
+          }
+          if (content.indexOf('<ul>') !== -1) {
+            $('ul').each(function (i, el) {
+              $(this).children().each(function (j, ele) {
+                let str = `* ${$(this).text()}\n`
+                console.log('str', str)
+                $(this).html(str)
+              })
             })
-          })
+          }
+          content = $.text()
+          console.log('content', content)
+          content = content.replace(/\n$/, '')
         }
-        content = $.text()
-        console.log('content', content)
-        content = content.replace(/\n$/, '')
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = exportMode ? content : `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
