@@ -41,7 +41,6 @@ export default defineComponent({
       syncData.syncing = true;
       const { cookie, token, server, syncMode } = s;
       console.log('同步模式=>', syncMode)
-
       const [start, end] = props.syncRange
       const start_date = dayjs(start).format('YYYY-MM-DD');
       const end_date = dayjs(end).format('YYYY-MM-DD');
@@ -55,6 +54,7 @@ export default defineComponent({
               await handleByTags(tags);
               console.log('sync end')
               logseq.App.showMsg('同步成功', 'success');
+              syncData.progressPercentage = 100;
               syncData.syncing = false;
             }
             break;
@@ -75,6 +75,7 @@ export default defineComponent({
             }
             console.log('sync end')
             logseq.App.showMsg('同步成功', 'success');
+            syncData.progressPercentage = 100;
             syncData.syncing = false;
             break;
 
@@ -85,14 +86,15 @@ export default defineComponent({
               console.log('memo_count', memo_count)
               // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
               const queryTimes = Math.ceil(memo_count / 50) + 1;
+              const interval = parseFloat((110 / queryTimes).toFixed(2));
               let rows = [];
               for (let i = 0; i < queryTimes; i++) {
+                // 调试用
                 if (i > 5) {
                   break
                 }
                 let offset = 50 * i
                 const { memos } = await fetchMemosByOffset({ cookie, token, server, offset })
-                syncData.progressPercentage = Math.floor(100 / queryTimes) * i;
                 if (memos?.length > 0) {
                   memos.forEach((memo) =>
                     rows.push({
@@ -101,10 +103,12 @@ export default defineComponent({
                     })
                   );
                 }
+                syncData.progressPercentage = Number((i + 1) * interval).toFixed(1);
               }
               console.log("flomo fetch success:", rows);
               await loadPage(s.title, rows)
               syncData.progressPercentage = 100;
+              syncData.syncing = false;
             } else {
               logseq.App.showMsg(`${message}，请检查配置`, 'error');
             }
@@ -113,7 +117,6 @@ export default defineComponent({
           default:
             break;
         }
-
       } catch (e) {
         console.log('catch e', e)
         syncData.syncing = false;
@@ -191,6 +194,7 @@ export default defineComponent({
               createFirstBlock: true,
               redirect: false,
               journal: syncMode === '2',
+              format: "markdown"
             }
           );
           console.log('createPage', result)
@@ -218,11 +222,13 @@ export default defineComponent({
       let uuid
       // 页面完全为空
       if (pageBlocksTree.length === 0) {
-        const firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true });
+        const firstBlock = await logseq.Editor.insertBlock(pageName, pagePropBlockString, { isPageBlock: true, format: "markdown" });
         console.log(`createFirstBlock ${pageName}`, firstBlock);
         uuid = firstBlock.uuid
       } else if (syncMode === '3') {
         uuid = pageBlocksTree[0].uuid
+        await insertBlock(uuid, memos, undefined, true)
+        return
       } else {
         //页面不为空匹配 flomo 一级节点
         for (let i = 0; i < pageBlocksTree.length; i++) {
@@ -239,17 +245,18 @@ export default defineComponent({
       }
       await insertBlock(uuid, memos)
     }
-    async function insertBlock (uuid, memos, has_img_memo_id) {
+    async function insertBlock (uuid, memos, has_img_memo_id, isSingle) {
       const { exportMode } = s;
       console.log('导出=>', exportMode)
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
-      const getBlockTree = exportMode || await logseq.Editor.getBlock(treeId, { includeChildren: true });
+      const getBlockTree = await logseq.Editor.getBlock(treeId, { includeChildren: true });
       console.log(`getBlockTree`, getBlockTree);
-      let childrenTree = exportMode || getBlockTree?.children
+      let childrenTree = getBlockTree?.children
       let n_uuid = uuid
-      for (const item of memos) {
+      for (let j = 0; j < memos.length; j++) {
+        const item = memos[j]
         console.log(`memo item`, item);
         let img_block_id
         let oldUuid
@@ -284,7 +291,7 @@ export default defineComponent({
             content = content.replaceAll('<p>', '').replaceAll('</p>', '\n')
           }
           if (content.indexOf('<strong>') !== -1) {
-            content = content.replaceAll('<strong>', '**').replaceAll('</strong>', '**')
+            content = content.replaceAll('<strong>', '*').replaceAll('</strong>', '*')
           }
           let $ = cheerio.load(content);
           if (content.indexOf('<ol>') !== -1) {
@@ -308,6 +315,8 @@ export default defineComponent({
           content = $.text()
           console.log('content', content)
           content = content.replace(/\n$/, '')
+        } else {
+          content = ''
         }
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = exportMode ? content : `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
@@ -320,7 +329,8 @@ export default defineComponent({
         } else {
           const before = childrenTree?.length !== 0 && !has_img_memo_id
           console.log('before', before, childrenTree?.length, has_img_memo_id);
-          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling: has_img_memo_id ? true : false, isPageBlock: false, before });
+          const sibling = has_img_memo_id || isSingle ? true : false
+          let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
           await logseq.Editor.insertBlock(n_block_id, '', { sibling: true, isPageBlock: false, before: false });
