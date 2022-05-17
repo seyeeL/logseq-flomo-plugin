@@ -86,13 +86,13 @@ export default defineComponent({
               console.log('memo_count', memo_count)
               // queryTimes 要加 1 的原因是 flomo 获取 memo_count 的接口不及时，因此多请求一次确保数据加载全
               const queryTimes = Math.ceil(memo_count / 50) + 1;
-              const interval = parseFloat((110 / queryTimes).toFixed(2));
+              const interval = parseFloat((95 / queryTimes).toFixed(2));
               let rows = [];
               for (let i = 0; i < queryTimes; i++) {
                 // 调试用
-                if (i > 5) {
-                  break
-                }
+                // if (i > 1) {
+                //   break
+                // }
                 let offset = 50 * i
                 const { memos } = await fetchMemosByOffset({ cookie, token, server, offset })
                 if (memos?.length > 0) {
@@ -227,7 +227,7 @@ export default defineComponent({
         uuid = firstBlock.uuid
       } else if (syncMode === '3') {
         uuid = pageBlocksTree[0].uuid
-        await insertBlock(uuid, memos, undefined, true)
+        await insertBlock(uuid, memos, undefined, pageBlocksTree)
         return
       } else {
         //页面不为空匹配 flomo 一级节点
@@ -245,15 +245,20 @@ export default defineComponent({
       }
       await insertBlock(uuid, memos)
     }
-    async function insertBlock (uuid, memos, has_img_memo_id, isSingle) {
+    async function insertBlock (uuid, memos, has_img_memo_id, pageBlocksTree) {
       const { exportMode } = s;
       console.log('导出=>', exportMode)
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
-      const getBlockTree = await logseq.Editor.getBlock(treeId, { includeChildren: true });
-      console.log(`getBlockTree`, getBlockTree);
-      let childrenTree = getBlockTree?.children
+      let childrenTree
+      if (pageBlocksTree) {
+        childrenTree = pageBlocksTree
+      } else {
+        const getBlockTree = await logseq.Editor.getBlock(treeId, { includeChildren: true });
+        childrenTree = getBlockTree?.children
+      }
+      console.log(`childrenTree`, childrenTree);
       let n_uuid = uuid
       for (let j = 0; j < memos.length; j++) {
         const item = memos[j]
@@ -327,9 +332,9 @@ export default defineComponent({
           await logseq.Editor.updateBlock(oldUuid, n_content);
           n_block_id = oldUuid
         } else {
-          const before = childrenTree?.length !== 0 && !has_img_memo_id
+          const before = pageBlocksTree || (childrenTree?.length !== 0 && !has_img_memo_id)
           console.log('before', before, childrenTree?.length, has_img_memo_id);
-          const sibling = has_img_memo_id || isSingle ? true : false
+          const sibling = has_img_memo_id || pageBlocksTree ? true : false
           let n_block = await logseq.Editor.insertBlock(n_uuid, n_content, { sibling, isPageBlock: false, before });
           n_block_id = n_block.uuid
           // add a blank block
