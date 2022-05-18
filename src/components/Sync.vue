@@ -75,6 +75,7 @@ export default defineComponent({
             }
             console.log('sync end')
             logseq.App.showMsg('同步成功', 'success');
+            logseq.updateSettings({ syncRange: [start_date, end_date] });
             syncData.progressPercentage = 100;
             syncData.syncing = false;
             break;
