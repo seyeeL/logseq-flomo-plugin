@@ -1,3 +1,12 @@
+# [1.4.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.5...v1.4.0) (2022-05-18)
+
+
+### Features
+
+* finish journal and single mode ([848c9d3](https://github.com/SeyeeL/logseq-flomo-plugin/commit/848c9d396f5358030fc359286b3624ac92c61aca))
+* save syncDate when in journal mode ([6feab44](https://github.com/SeyeeL/logseq-flomo-plugin/commit/6feab4430cad23e80d923f5fddf2bd99d56ef9c8))
+* the settings of sync mode and export mode ([7cb1741](https://github.com/SeyeeL/logseq-flomo-plugin/commit/7cb17419ae2da688a299bcb77b562106b2ea29c5))
+
 ## [1.3.5](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.4...v1.3.5) (2022-05-08)
 
 
