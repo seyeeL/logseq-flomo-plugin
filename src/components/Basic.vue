@@ -1,15 +1,15 @@
 <template>
   <h3>
     STEP 1：基本设置
-     <a-tooltip placement="bottom">
+    <a-tooltip placement="bottom">
       <template #title>
         <span>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参照该链接方式获取。<br>Proxy
-      Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
+          Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
       </template>
       <question-circle-outlined />
     </a-tooltip>
   </h3>
- 
+
   <a-row class="basic-row">
     <a-col :span="6">
       <div class="item-label"><label>userId</label></div>
@@ -40,9 +40,10 @@
         <label>Proxy Server</label>
         <a-tooltip>
           <template #title>
-            <span>可下载 <a href="https://github.com/swiftwind0405/flomo-proxy-server/releases" target="_blank">flomo-proxy-server</a> 配合食用<br>默认地址为 http://localhost:3228</span>
+            <span>可下载 <a href="https://github.com/swiftwind0405/flomo-proxy-server/releases"
+                target="_blank">flomo-proxy-server</a> 配合食用<br>默认地址为 http://localhost:3228</span>
           </template>
-          <question-circle-outlined style="margin-left: 4px"/>
+          <question-circle-outlined style="margin-left: 4px" />
         </a-tooltip>
       </div>
     </a-col>
@@ -103,7 +104,7 @@ export default defineComponent({
       server: ref(s.server),
       totalCount: ref(0),
     });
-    async function refresh() {
+    async function refresh () {
       try {
         const { code, stat, message } = await loadStatFromFlomo(logseqSettings);
         if (code === 0) {
