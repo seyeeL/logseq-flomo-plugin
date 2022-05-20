@@ -28,7 +28,7 @@
                 - 标签模式：每一个 tag 作为独立的 page<br>
                 - 日记模式：指定时间范围内，把 memos 写入相应的 journal note 中<br>
                 - 单页模式：所有的 memos 放一个 page 中<br>
-                - 仅导出数据：仅导出flomo笔记，不带有logseq块属性，无法持续更新，用其他markdown工具打开无块属性污染，适用于备份数据。
+                <!-- - 仅导出数据：仅导出flomo笔记，不带有logseq块属性，无法持续更新，用其他markdown工具打开无块属性污染，适用于备份数据。 -->
               </span>
             </template>
             <question-circle-outlined style="margin-left: 4px" />
@@ -42,46 +42,50 @@
           <a-select-option value="3">单页模式</a-select-option>
         </a-select>
         <a-space style="margin-left: 50px">
-          <a-checkbox v-model:checked="exportMode" @change="saveExportMode">仅导出数据</a-checkbox>
-          <!-- <a-tooltip placement="top">
-            <template #title>
-              <span>仅导出flomo笔记，不带有logseq块属性，无法持续更新，用其他markdown工具打开无块属性污染，适用于备份数据。</span>
-            </template>
-            <question-circle-outlined />
-          </a-tooltip> -->
         </a-space>
       </a-col>
     </a-row>
     <a-row class="basic-row" v-if="syncMode === '2'">
       <a-col :span="6">
-        <div class="item-label">
-          时间范围
-        </div>
+        <div class="item-label">时间范围</div>
       </a-col>
       <a-col :span="16">
         <a-range-picker v-model:value="syncRange" @change="syncRangeChange" />
       </a-col>
     </a-row>
-    <div>
-
+    <div >
+       <a-switch size="small" :checked="exportMode"  @change="saveExportMode" default-checked />
+       <span >仅导出数据</span>
     </div>
-    <!-- <div class="item-block">
-      <h4>最大同步数量</h4>
-      <p>限制每次同步的最大数量。默认 0，同步所有 memos。</p>
-      <div>
-        <a-input-number id="inputNumber" v-model:value="maxCount" :min="0" :step="50" @blur="saveMaxCount" />
-      </div>
-    </div> -->
+    <div class="tips">导出内容不含 logseq 块属性，无法持续更新，用其他 markdown 工具打开无块属性污染，适用于备份数据</div>
+    <div >
+       <a-switch size="small" :checked="addTime"  @change="syncAddTime" default-checked />
+       <span >memo 前加上时间</span>
+       <div class="tips">如 12：00 这是一条 memo</div>
+    </div>
+    <div>
+    </div>
   </div>
 </template>
 
-<style>
+<style lang="less">
 .customise-header {
   display: flex;
   justify-content: space-between;
 }
 .ant-picker.ant-picker-range {
   width: 100%;
+}
+.ant-switch-small{
+  margin: -3px 10px 0 0;
+}
+.tips{
+  color: #c5c5c5;
+  font-size: 12px;
+  padding:0 35px 0 38px;
+  &:not(:last-child){
+    margin-bottom: 10px;
+  }
 }
 </style>
 
@@ -110,7 +114,8 @@ export default defineComponent({
     const logseqSettings = reactive({
       exportMode: ref(s.exportMode),
       syncRange: ref(props.syncRange),
-      syncMode: ref(s.syncMode),
+      syncMode: ref(props.syncMode),
+      addTime: ref(props.addTime),
       maxCount: ref(s.maxCount),
       title: ref(s.title),
       collapsed: ref(false),
@@ -123,6 +128,9 @@ export default defineComponent({
     };
     const saveExportMode = () => {
       logseq.updateSettings({ exportMode: logseqSettings.exportMode });
+    };
+    const syncAddTime = () => {
+      logseq.updateSettings({ addTime: logseqSettings.addTime });
     };
     const saveSyncMode = () => {
       logseq.updateSettings({ syncMode: logseqSettings.syncMode });
@@ -137,6 +145,7 @@ export default defineComponent({
     return {
       toggle,
       saveExportMode,
+      syncAddTime,
       saveSyncMode,
       saveMaxCount,
       saveTitle,

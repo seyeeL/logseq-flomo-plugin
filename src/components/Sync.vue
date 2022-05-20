@@ -247,8 +247,8 @@ export default defineComponent({
       await insertBlock(uuid, memos)
     }
     async function insertBlock (uuid, memos, has_img_memo_id, pageBlocksTree) {
-      const { exportMode } = s;
-      console.log('导出=>', exportMode)
+      const { exportMode,addTime } = s;
+      console.log('导出=>', exportMode,addTime)
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
@@ -278,10 +278,10 @@ export default defineComponent({
               if (childrenTree[i].content.indexOf(`#+updated: ${updated_at}`) !== -1) {
                 console.log("且时间匹配");
                 if (files?.length) {
-                  img_block_id = await handleImgsFromFlomo(files, childrenTree[i].uuid)
+                  img_block_id = await handleImages(files, childrenTree[i].uuid)
                 }
                 if (backlinked_count) {
-                  await handleBacklinkedsFromFlomo(slug, img_block_id || childrenTree[i].uuid, img_block_id ? childrenTree[i].uuid : false)
+                  await handleBacklinkeds(slug, img_block_id || childrenTree[i].uuid, img_block_id ? childrenTree[i].uuid : false)
                 }
                 break
               }
@@ -324,6 +324,7 @@ export default defineComponent({
         } else {
           content = ''
         }
+        content = addTime?`${created_at.slice(11,16)} ${content}`:content
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = exportMode ? content : `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
@@ -343,14 +344,16 @@ export default defineComponent({
         }
         console.log('n_block_id', n_block_id)
         if (files?.length) {
-          img_block_id = await handleImgsFromFlomo(files, n_block_id)
+          img_block_id = await handleImages(files, n_block_id)
         }
         if (backlinked_count) {
-          await handleBacklinkedsFromFlomo(slug, img_block_id || n_block_id, img_block_id ? n_block_id : false)
+          await handleBacklinkeds(slug, img_block_id || n_block_id, img_block_id ? n_block_id : false)
         }
       }
     }
-    async function handleImgsFromFlomo (files, n_block_id) {
+    async function handleImages (files, n_block_id) {
+      const { exportMode } = s;
+      console.log('导出=>', exportMode)
       let imgContent = ''
       let block_id = n_block_id
       const n_BlockTree = await logseq.Editor.getBlock(n_block_id, { includeChildren: true });
@@ -358,12 +361,12 @@ export default defineComponent({
       for (let i = 0; i < files.length; i++) {
         imgContent = `${imgContent}\n![image](${files[i].url})`
       }
-      imgContent = `${imgContent}\n#+isImg: true`
+      imgContent = exportMode ? `${imgContent}` : `${imgContent}\n#+isImg: true`
       if (n_BlockTree?.children.length === 0) {
         const res = await logseq.Editor.insertBlock(block_id, imgContent, { sibling: false, isPageBlock: false, before: false });
         console.log('res1', res)
         return res.uuid
-      } else if (n_BlockTree?.children?.[0].content.indexOf(`#+isImg: true`) !== -1) {
+      } else if (!exportMode && n_BlockTree?.children?.[0].content.indexOf(`#+isImg: true`) !== -1) {
         await logseq.Editor.updateBlock(n_BlockTree.children[0].uuid, imgContent);
         return n_BlockTree.children[0].uuid
       } else {
@@ -373,8 +376,8 @@ export default defineComponent({
         return res.uuid
       }
     }
-    async function handleBacklinkedsFromFlomo (slug, n_block_id, has_img_memo_id) {
-      console.log('handleBacklinkedsFromFlomo', slug, n_block_id, has_img_memo_id);
+    async function handleBacklinkeds (slug, n_block_id, has_img_memo_id) {
+      console.log('handleBacklinkeds', slug, n_block_id, has_img_memo_id);
       const { cookie, token, server } = s;
       const { memo } = await getBacklinkedMemos({ slug, cookie, token, server })
       if (memo?.backlinkeds?.length > 0) {
