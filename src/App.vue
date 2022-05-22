@@ -16,7 +16,6 @@ import Basic from './components/Basic.vue';
 import Customise from './components/Customise.vue';
 import Sync from './components/Sync.vue';
 import dayjs from 'dayjs';
-import { end } from 'cheerio/lib/api/traversing';
 
 export default {
   name: "App",
