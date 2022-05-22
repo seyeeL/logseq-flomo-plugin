@@ -4,6 +4,7 @@ const DEFAULT_SETTINGS = {
   token: '',
   syncMode: '1',
   exportMode: false,
+  exportMode: false,
   maxCount: 0,
   title: "flomo",
   server: "http://localhost:3228"

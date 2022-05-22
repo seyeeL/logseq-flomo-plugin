@@ -54,12 +54,12 @@
       </a-col>
     </a-row>
     <div >
-       <a-switch size="small" :checked="exportMode"  @change="saveExportMode" default-checked />
+       <a-switch size="small" v-model:checked="exportMode"  @change="saveExportMode" default-checked />
        <span >仅导出数据</span>
     </div>
     <div class="tips">导出内容不含 logseq 块属性，无法持续更新，用其他 markdown 工具打开无块属性污染，适用于备份数据</div>
     <div >
-       <a-switch size="small" :checked="addTime"  @change="syncAddTime" default-checked />
+       <a-switch size="small" v-model:checked="addTime"  @change="syncAddTime" default-checked />
        <span >memo 前加上时间</span>
        <div class="tips">如 12：00 这是一条 memo</div>
     </div>
@@ -114,8 +114,8 @@ export default defineComponent({
     const logseqSettings = reactive({
       exportMode: ref(s.exportMode),
       syncRange: ref(props.syncRange),
-      syncMode: ref(props.syncMode),
-      addTime: ref(props.addTime),
+      syncMode: ref(s.syncMode),
+      addTime: ref(s.addTime),
       maxCount: ref(s.maxCount),
       title: ref(s.title),
       collapsed: ref(false),
