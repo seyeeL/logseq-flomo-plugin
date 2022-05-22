@@ -61,7 +61,7 @@
     <div >
        <a-switch size="small" v-model:checked="addTime"  @change="syncAddTime" default-checked />
        <span >memo 前加上时间</span>
-       <div class="tips">如 12：00 这是一条 memo</div>
+       <div class="tips">如 12：00 这是一条 memo，日记模式只加时间，其他格式会加上日期</div>
     </div>
     <div>
     </div>

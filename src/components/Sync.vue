@@ -247,8 +247,8 @@ export default defineComponent({
       await insertBlock(uuid, memos)
     }
     async function insertBlock (uuid, memos, has_img_memo_id, pageBlocksTree) {
-      const { exportMode,addTime } = s;
-      console.log('导出=>', exportMode,addTime)
+      const { exportMode, addTime, syncMode } = s;
+      console.log('导出=>', exportMode, addTime, syncMode)
       // has_img_memo_id 表示有图片节点的正文节点，一般处理批注节点的时候会传
       const treeId = has_img_memo_id || uuid
       console.log(`insertBlock start: treeId`, treeId);
@@ -324,7 +324,8 @@ export default defineComponent({
         } else {
           content = ''
         }
-        content = addTime?`${created_at.slice(11,16)} ${content}`:content
+        const timeString = syncMode === '2' ? created_at.slice(11, 16) : `${created_at}\n`
+        content = addTime ? `${timeString} ${content}` : content
         // const n_content = `${content}\nmemo_url:: ${memo_url}\nflomo_id:: ${slug}\nupdated:: ${updated_at}`;  // md
         const n_content = exportMode ? content : `${content}\n#+memo_url: ${memo_url}\n#+flomo_id: ${slug}\n#+created: ${created_at}\n#+updated: ${updated_at}`; // org
         // const n_content = `${content}\n:PROPERTIES:\n:memo_url: ${memo_url}\n:flomo_id: ${slug}\n:updated: ${updated_at}\n:END:`; // both org md
