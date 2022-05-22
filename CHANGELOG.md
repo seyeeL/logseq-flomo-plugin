@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.5.0...v1.6.0) (2022-05-22)
+
+
+### Features
+
+* add mode time format ([201f381](https://github.com/SeyeeL/logseq-flomo-plugin/commit/201f381a5709699313ff6d6ff62c40697fa25f9b))
+
 # [1.5.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.4.0...v1.5.0) (2022-05-22)
 
 
