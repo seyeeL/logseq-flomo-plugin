@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.4.0...v1.5.0) (2022-05-22)
+
+
+### Features
+
+* show memo time ([c392b42](https://github.com/SeyeeL/logseq-flomo-plugin/commit/c392b42ef1dc85bcb2ae615640aebf95ae20ebd5))
+
 # [1.4.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.3.5...v1.4.0) (2022-05-18)
 
 
