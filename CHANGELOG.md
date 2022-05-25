@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.6.0...v1.6.1) (2022-05-25)
+
+
+### Bug Fixes
+
+* remove exportMode property ([c20e2e5](https://github.com/SeyeeL/logseq-flomo-plugin/commit/c20e2e581a67dcb2f521dfd1d478173754c3f2f4))
+
 # [1.6.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.5.0...v1.6.0) (2022-05-22)
 
 
