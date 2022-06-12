@@ -36,7 +36,7 @@
         </div>
       </a-col>
       <a-col :span="16">
-        <a-select ref="select" v-model:value="syncMode" style="width: 160px" @change="saveSyncMode">
+        <a-select ref="select" v-model:value="syncMode" style="width: 160px" @change="saveConfig($event,'syncMode')">
           <a-select-option value="1">标签模式</a-select-option>
           <a-select-option value="2">日记模式</a-select-option>
           <a-select-option value="3">单页模式</a-select-option>
@@ -45,23 +45,41 @@
         </a-space>
       </a-col>
     </a-row>
+    <a-row class="basic-row" v-if="syncMode === '1'">
+      <a-col :span="6">
+        <div class="item-label">标签范围</div>
+      </a-col>
+      <a-col :span="6">
+        <a-select ref="select" v-model:value="rangeType" style="width: 100px" @change="saveConfig($event,'rangeType')">
+          <a-select-option value="1">不限</a-select-option>
+          <a-select-option value="2">排除标签</a-select-option>
+          <a-select-option value="3">仅同步标签</a-select-option>
+        </a-select>
+      </a-col>
+      <a-col :span="10" v-if="rangeType !== '1'">
+        <a-select ref="select" mode="multiple" v-model:value="tagRange" style="width: 195px" :max-tag-count="1"
+          :maxTagTextLength="4" @change="saveConfig($event,'tagRange')">
+          <a-select-option v-for="item in tags" :key="item.name" :value="item.name">{{item.name}}</a-select-option>
+        </a-select>
+      </a-col>
+    </a-row>
     <a-row class="basic-row" v-if="syncMode === '2'">
       <a-col :span="6">
         <div class="item-label">时间范围</div>
       </a-col>
       <a-col :span="16">
-        <a-range-picker v-model:value="syncRange" @change="syncRangeChange" />
+        <a-range-picker v-model:value="syncRange" @change="saveConfig($event,'syncRange')" />
       </a-col>
     </a-row>
-    <div >
-       <a-switch size="small" v-model:checked="exportMode"  @change="saveExportMode" default-checked />
-       <span >仅导出数据</span>
+    <div>
+      <a-switch size="small" v-model:checked="exportMode" @change="saveConfig($event,'exportMode')" default-checked />
+      <span>仅导出数据</span>
     </div>
     <div class="tips">导出内容不含 logseq 块属性，无法持续更新，用其他 markdown 工具打开无块属性污染，适用于备份数据</div>
-    <div >
-       <a-switch size="small" v-model:checked="addTime"  @change="syncAddTime" default-checked />
-       <span >memo 前加上时间</span>
-       <div class="tips">如 12：00 这是一条 memo，日记模式只加时间，其他格式会加上日期</div>
+    <div>
+      <a-switch size="small" v-model:checked="addTime" @change="saveConfig($event,'addTime')" default-checked />
+      <span>memo 前加上时间</span>
+      <div class="tips">如 12：00 这是一条 memo，日记模式只加时间，其他格式会加上日期</div>
     </div>
     <div>
     </div>
@@ -76,23 +94,23 @@
 .ant-picker.ant-picker-range {
   width: 100%;
 }
-.ant-switch-small{
+.ant-switch-small {
   margin: -3px 10px 0 0;
 }
-.tips{
+.tips {
   color: #c5c5c5;
   font-size: 12px;
-  padding:0 35px 0 38px;
-  &:not(:last-child){
+  padding: 0 35px 0 38px;
+  &:not(:last-child) {
     margin-bottom: 10px;
   }
 }
 </style>
 
 <script>
-import { defineComponent, ref, toRefs, reactive } from 'vue';
-import { QuestionCircleOutlined } from "@ant-design/icons-vue";
-
+import { defineComponent, ref, toRefs, reactive, onMounted } from 'vue';
+import { QuestionCircleOutlined } from '@ant-design/icons-vue';
+import { fetchAllTags } from '../utils';
 export default defineComponent({
   props: {
     title: {
@@ -107,52 +125,53 @@ export default defineComponent({
     },
   },
   components: {
-    QuestionCircleOutlined
+    QuestionCircleOutlined,
   },
-  setup (props, content) {
+  setup(props, content) {
     const s = logseq.settings || {};
     const logseqSettings = reactive({
       exportMode: ref(s.exportMode),
       syncRange: ref(props.syncRange),
+      tags: ref(s.tags),
       syncMode: ref(s.syncMode),
+      tagRange: ref(s.tagRange),
+      rangeType: ref('1'),
       addTime: ref(s.addTime),
       maxCount: ref(s.maxCount),
       title: ref(s.title),
       collapsed: ref(false),
     });
-    const saveMaxCount = () => {
-      logseq.updateSettings({ maxCount: logseqSettings.maxCount });
-    };
-    const saveTitle = () => {
-      logseq.updateSettings({ title: logseqSettings.title });
-    };
-    const saveExportMode = () => {
-      logseq.updateSettings({ exportMode: logseqSettings.exportMode });
-    };
-    const syncAddTime = () => {
-      logseq.updateSettings({ addTime: logseqSettings.addTime });
-    };
-    const saveSyncMode = () => {
-      logseq.updateSettings({ syncMode: logseqSettings.syncMode });
-    };
     const toggle = () => {
-      logseqSettings.collapsed = !logseqSettings.collapsed
+      logseqSettings.collapsed = !logseqSettings.collapsed;
     };
-    const syncRangeChange = (val) => {
-      content.emit('syncRangeChange', val);
-    }
+    const saveConfig = (e, name) => {
+      let value = e;
+      if (name === 'rangeType') {
+        onfetchAllTags();
+      } else if (name === 'tagRange') {
+        content.emit('changeTagRange', e);
+        return;
+      } else if (name === 'syncRange') {
+        content.emit('syncRangeChange', val);
+      }
+      logseq.updateSettings({ [name]: value });
+    };
+    const onfetchAllTags = async () => {
+      const { cookie, token, server } = s;
+      const { tags } = await fetchAllTags({ cookie, token, server });
+      console.log(tags);
+      const newTags = tags.filter(item => {
+        return item.name.indexOf('/') === -1;
+      });
+      logseqSettings.tags = newTags;
+    };
     const logseqSettingsRef = toRefs(logseqSettings);
     return {
       toggle,
-      saveExportMode,
-      syncAddTime,
-      saveSyncMode,
-      saveMaxCount,
-      saveTitle,
-      syncRangeChange,
+      saveConfig,
+      fetchAllTags,
       ...logseqSettingsRef,
     };
   },
-
 });
 </script>

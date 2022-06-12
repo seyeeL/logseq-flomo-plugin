@@ -33,6 +33,9 @@ export default defineComponent({
     syncRange: {
       type: Array,
     },
+    tagRange: {
+      type: Array,
+    },
   },
   setup(props) {
     const s = logseq.settings || {};
@@ -46,9 +49,11 @@ export default defineComponent({
     async function sync() {
       console.log('sync start');
       syncData.syncing = true;
-      const { cookie, token, server, syncMode } = s;
+      const { cookie, token, server, syncMode, rangeType } = s;
       console.log('同步模式=>', syncMode);
       const [start, end] = props.syncRange;
+      const tagRange = props.tagRange;
+      console.log('tagRange=>', tagRange);
       const start_date = dayjs(start).format('YYYY-MM-DD');
       const end_date = dayjs(end).format('YYYY-MM-DD');
       console.log('DateFormat=>', start_date, end_date);
@@ -57,8 +62,17 @@ export default defineComponent({
           case '1': // 标签模式
             const { tags } = await fetchAllTags({ cookie, token, server });
             if (tags.length > 0) {
-              console.log('tags', tags);
-              await handleByTags(tags);
+              const newTags = tags.filter(item => {
+                if (rangeType === '2') {
+                  return tagRange.indexOf(item.name.split('/')[0]) === -1;
+                } else if (rangeType === '3') {
+                  return tagRange.indexOf(item.name) !== -1;
+                } else {
+                  return item;
+                }
+              });
+              console.log('newTags', newTags);
+              await handleByTags(newTags);
               console.log('sync end');
               logseq.App.showMsg('同步成功', 'success');
               syncData.progressPercentage = 100;
