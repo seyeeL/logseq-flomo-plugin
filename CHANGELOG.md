@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.6.1...v1.7.0) (2022-06-12)
+
+
+### Features
+
+*  add tag range 增加标签范围 ([3f5b324](https://github.com/SeyeeL/logseq-flomo-plugin/commit/3f5b32400691503d0d343ecd7e39e2a760655e94))
+
 ## [1.6.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.6.0...v1.6.1) (2022-05-25)
 
 
