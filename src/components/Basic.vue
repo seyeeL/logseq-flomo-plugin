@@ -3,7 +3,7 @@
     STEP 1：基本设置
     <a-tooltip placement="bottom">
       <template #title>
-        <span>因 flomo 服务器设置以及安全原因，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参照该链接方式获取。<br>Proxy
+        <span>因 flomo 服务器设置，目前只能通过 http-proxy 的方法来获取 flomo 中的数据。<br>userId cookie token 请参考帮助文档获取。<br>Proxy
           Server 为自建服务器地址，请填入代理服务器的地址。<br>确认基本设置项无误后，点击刷新，获取到 memos 的数量即为设置成功。</span>
       </template>
       <question-circle-outlined />
