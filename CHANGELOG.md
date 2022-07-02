@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.7.0...v1.7.1) (2022-07-02)
+
+
+### Bug Fixes
+
+* Sync time range is not valid 同步时间不生效 ([f4d104a](https://github.com/SeyeeL/logseq-flomo-plugin/commit/f4d104afa9bff6c9405b90f9fee0c6f255e83acf))
+
 # [1.7.0](https://github.com/SeyeeL/logseq-flomo-plugin/compare/v1.6.1...v1.7.0) (2022-06-12)
 
 
